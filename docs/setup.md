@@ -5,33 +5,33 @@
 Install dependencies:
 
 ```bash
-bun install
+yarn install
 ```
 
 Run app + Convex locally:
 
 ```bash
-bun run dev
+yarn dev
 ```
 
 Run only the web app:
 
 ```bash
-bun run dev:web
+yarn dev:web
 ```
 
 ## Build / Run
 
 ```bash
-bun run build
-bun run start
+yarn build
+yarn start
 ```
 
 ## Quality checks
 
 ```bash
-bun run typecheck
-bun run lint
+yarn typecheck
+yarn lint
 ```
 
 ## Environment variables
