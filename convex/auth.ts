@@ -38,6 +38,7 @@ export function identityAvatarUrl(identity: ClerkIdentity): string | undefined {
 
 export async function getUser(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
+  console.log("[DEBUG auth] getUserIdentity result:", identity ? { subject: identity.subject, issuer: identity.issuer, tokenIdentifier: identity.tokenIdentifier } : null);
   if (!identity) {
     return null;
   }

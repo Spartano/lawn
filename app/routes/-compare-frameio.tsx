@@ -149,8 +149,8 @@ export default function CompareFrameio() {
             MATH.
           </h2>
           <p className="text-center text-lg text-[var(--foreground-muted)] font-medium mb-16 max-w-lg mx-auto">
-            Frame.io charges $19 per user per month. Signum charges $5 per month.
-            Not per user. Just $5. Here's what that means annually.
+            Frame.io charges $19 per user per month. Signum charges $5 per
+            month. Not per user. Just $5. Here's what that means annually.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -345,7 +345,7 @@ export default function CompareFrameio() {
             to="/sign-up"
             className="bg-[var(--surface-strong)] text-[var(--foreground-inverse)] px-12 py-6 border-2 border-[var(--border)] text-2xl font-black uppercase tracking-wider hover:bg-[var(--accent)] hover:border-[var(--accent)] transition-colors shadow-[12px_12px_0px_0px_var(--shadow-accent)] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[8px_8px_0px_0px_var(--shadow-accent)]"
           >
-            TRY LAWN FREE
+            TRY SIGNUM FREE
           </Link>
           <p className="text-sm text-[var(--foreground-muted)] mt-6">
             Or keep paying $19/user/month. We don't judge.
