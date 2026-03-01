@@ -59,6 +59,7 @@ export interface VideoPlayerHandle {
 }
 
 const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+const SEEK_STEPS = [1, 5, 10, 30, 60] as const;
 const AUTO_QUALITY_LEVEL = -1 as const;
 
 type QualityLevelOption = {
@@ -116,6 +117,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const [isDownloading, setIsDownloading] = useState(false);
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [seekStep, setSeekStep] = useState(1);
+  const [seekStepMenuOpen, setSeekStepMenuOpen] = useState(false);
+  const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
   const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   const [qualityOptions, setQualityOptions] = useState<QualityLevelOption[]>([]);
   const [selectedQualityLevel, setSelectedQualityLevel] = useState<number>(AUTO_QUALITY_LEVEL);
@@ -249,19 +253,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       setIsMuted(true);
     }
   }, [setVideoVolume, showControls]);
-
-  const cyclePlaybackRate = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    showControls();
-
-    const currentIndex = PLAYBACK_RATES.findIndex((rate) => rate === video.playbackRate);
-    const nextIndex = currentIndex === -1 ? 3 : (currentIndex + 1) % PLAYBACK_RATES.length;
-    const nextRate = PLAYBACK_RATES[nextIndex];
-    video.playbackRate = nextRate;
-    setPlaybackRate(nextRate);
-  }, [showControls]);
 
   const toggleFullscreen = useCallback(async () => {
     const target = controlsBelow ? wrapperRef.current : containerRef.current;
@@ -672,6 +663,32 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   }, [contextMenu]);
 
   useEffect(() => {
+    if (!seekStepMenuOpen) return;
+
+    const handleClose = () => setSeekStepMenuOpen(false);
+    window.addEventListener("click", handleClose);
+    window.addEventListener("blur", handleClose);
+
+    return () => {
+      window.removeEventListener("click", handleClose);
+      window.removeEventListener("blur", handleClose);
+    };
+  }, [seekStepMenuOpen]);
+
+  useEffect(() => {
+    if (!speedMenuOpen) return;
+
+    const handleClose = () => setSpeedMenuOpen(false);
+    window.addEventListener("click", handleClose);
+    window.addEventListener("blur", handleClose);
+
+    return () => {
+      window.removeEventListener("click", handleClose);
+      window.removeEventListener("blur", handleClose);
+    };
+  }, [speedMenuOpen]);
+
+  useEffect(() => {
     if (!qualityMenuOpen) return;
 
     const handleClose = () => setQualityMenuOpen(false);
@@ -798,38 +815,104 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); handleSeekBy(-10); }}
+            onClick={(e) => { e.stopPropagation(); handleSeekBy(-seekStep); }}
             className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-white/25 hover:bg-white/15"
-            aria-label="Rewind 10 seconds"
-            title="Rewind 10 seconds"
+            aria-label={`Rewind ${seekStep} seconds`}
+            title={`Rewind ${seekStep}s`}
           >
             <RotateCcw className="h-4 w-4" />
           </button>
 
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); handleSeekBy(10); }}
-            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-white/25 hover:bg-white/15"
-            aria-label="Forward 10 seconds"
-            title="Forward 10 seconds"
-          >
-            <RotateCw className="h-4 w-4" />
-          </button>
+          <div className="relative hidden sm:block">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); showControls(); setSeekStepMenuOpen((c) => !c); setSpeedMenuOpen(false); setQualityMenuOpen(false); }}
+              className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
+              aria-label={`Seek step ${seekStep}s`}
+              title="Change seek step"
+            >
+              {seekStep}s
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+
+            {seekStepMenuOpen && (
+              <div
+                className="absolute right-0 bottom-11 z-30 min-w-[100px] rounded-lg border border-white/10 bg-black/90 p-1.5 text-sm text-white shadow-2xl backdrop-blur"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {SEEK_STEPS.map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() => {
+                      setSeekStep(step);
+                      setSeekStepMenuOpen(false);
+                      showControls();
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-white/95 transition hover:bg-white/10"
+                  >
+                    <span>{step}s</span>
+                    {seekStep === step && <Check className="h-4 w-4" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); cyclePlaybackRate(); }}
-            className="inline-flex h-9 min-w-[56px] items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
-            aria-label={`Playback speed ${playbackRate}x`}
-            title="Change playback speed"
+            onClick={(e) => { e.stopPropagation(); handleSeekBy(seekStep); }}
+            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-white/25 hover:bg-white/15"
+            aria-label={`Forward ${seekStep} seconds`}
+            title={`Forward ${seekStep}s`}
           >
-            {playbackRate}x
+            <RotateCw className="h-4 w-4" />
           </button>
 
           <div className="relative">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); showControls(); setQualityMenuOpen((c) => !c); }}
+              onClick={(e) => { e.stopPropagation(); showControls(); setSpeedMenuOpen((c) => !c); setQualityMenuOpen(false); setSeekStepMenuOpen(false); }}
+              className="inline-flex h-9 min-w-[56px] items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
+              aria-label={`Playback speed ${playbackRate}x`}
+              title="Change playback speed"
+            >
+              {playbackRate}x
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+
+            {speedMenuOpen && (
+              <div
+                className="absolute right-0 bottom-11 z-30 min-w-[120px] rounded-lg border border-white/10 bg-black/90 p-1.5 text-sm text-white shadow-2xl backdrop-blur"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {PLAYBACK_RATES.map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    onClick={() => {
+                      const video = videoRef.current;
+                      if (video) {
+                        video.playbackRate = rate;
+                        setPlaybackRate(rate);
+                      }
+                      setSpeedMenuOpen(false);
+                      showControls();
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-white/95 transition hover:bg-white/10"
+                  >
+                    <span>{rate}x</span>
+                    {playbackRate === rate && <Check className="h-4 w-4" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); showControls(); setQualityMenuOpen((c) => !c); setSpeedMenuOpen(false); setSeekStepMenuOpen(false); }}
               className="inline-flex h-9 min-w-[108px] items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
               aria-label={`Quality ${qualityLabel}`}
               title="Quality settings"
@@ -924,7 +1007,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       ref={wrapperRef}
       className={cn(
         "relative",
-        controlsBelow ? "flex flex-col h-full bg-black" : "",
+        controlsBelow ? "flex flex-col flex-1 min-h-0 bg-black" : "",
         className,
       )}
     >
@@ -955,12 +1038,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           }
           if (e.key === "ArrowLeft") {
             e.preventDefault();
-            handleSeekBy(-5);
+            handleSeekBy(-seekStep);
             return;
           }
           if (e.key === "ArrowRight") {
             e.preventDefault();
-            handleSeekBy(5);
+            handleSeekBy(seekStep);
             return;
           }
           if (e.key.toLowerCase() === "f") {
@@ -977,6 +1060,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           e.preventDefault();
           showControls();
           setQualityMenuOpen(false);
+          setSpeedMenuOpen(false);
+          setSeekStepMenuOpen(false);
           const rect = e.currentTarget.getBoundingClientRect();
           const menuWidth = 180;
           const menuHeight = 120;
