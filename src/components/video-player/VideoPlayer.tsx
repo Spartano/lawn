@@ -758,7 +758,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       </div>
 
       {/* Control row */}
-      <div className="flex flex-wrap items-center gap-2 text-white">
+      <div className="flex flex-wrap items-center gap-2 text-white" translate="no">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}
