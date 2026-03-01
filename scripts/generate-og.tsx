@@ -105,9 +105,9 @@ const images: { name: string; jsx: ReturnType<typeof TextOverlay> }[] = [
     name: "default",
     jsx: (
       <TextOverlay
-        title="lawn"
+        title="Signum"
         titleSize={200}
-        subtitle="Video review that doesn't suck"
+        subtitle="Video review for coaching teams"
       />
     ),
   },
@@ -115,9 +115,9 @@ const images: { name: string; jsx: ReturnType<typeof TextOverlay> }[] = [
     name: "home",
     jsx: (
       <TextOverlay
-        title="lawn"
+        title="Signum"
         titleSize={200}
-        subtitle="Video review that doesn't suck"
+        subtitle="Video review for coaching teams"
       />
     ),
   },
@@ -125,7 +125,7 @@ const images: { name: string; jsx: ReturnType<typeof TextOverlay> }[] = [
     name: "compare-frameio",
     jsx: (
       <TextOverlay
-        title="lawn vs Frame.io"
+        title="Signum vs Frame.io"
         titleSize={96}
         subtitle="$5/mo flat vs $19/user/mo"
       />
@@ -135,7 +135,7 @@ const images: { name: string; jsx: ReturnType<typeof TextOverlay> }[] = [
     name: "compare-wipster",
     jsx: (
       <TextOverlay
-        title="lawn vs Wipster"
+        title="Signum vs Wipster"
         titleSize={96}
         subtitle="Simpler. Cheaper. Open source."
       />

@@ -8,37 +8,37 @@ const comparisonRows = [
   {
     feature: "Price",
     frameio: "$19/user/month",
-    lawn: "$5/month. Total.",
+    Signum: "$5/month. Total.",
     note: "Math is hard, but not that hard.",
   },
   {
     feature: "Seats",
     frameio: "Limited by plan tier",
-    lawn: "Unlimited",
+    Signum: "Unlimited",
     note: "Your intern deserves access too.",
   },
   {
     feature: "Speed",
     frameio: "It's... fine",
-    lawn: "Actually fast",
+    Signum: "Actually fast",
     note: "We obsess over this so you don't wait.",
   },
   {
     feature: "Open source",
     frameio: "No",
-    lawn: "Yes",
+    Signum: "Yes",
     note: "Read our code. Judge us.",
   },
   {
     feature: "Sharing",
     frameio: "Account required",
-    lawn: "Just a link",
+    Signum: "Just a link",
     note: "Your clients don't want another login.",
   },
   {
     feature: "Setup",
     frameio: "Call sales for enterprise",
-    lawn: "Sign up and upload",
+    Signum: "Sign up and upload",
     note: "Under 60 seconds or your money back.",
   },
 ];
@@ -63,7 +63,7 @@ export default function CompareFrameio() {
       <section className="px-6 pt-20 pb-24 md:pt-28 md:pb-32 border-b-2 border-[var(--border)] bg-[var(--background)]">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-[14vw] sm:text-[10vw] md:text-[8vw] font-black leading-[0.85] tracking-tighter uppercase">
-            lawn vs
+            Signum vs
             <br />
             Frame.io
           </h1>
@@ -79,7 +79,7 @@ export default function CompareFrameio() {
             </p>
             <p className="mt-6 text-lg text-[var(--foreground-muted)] font-medium max-w-lg">
               Frame.io is a great product built for enterprise teams with
-              enterprise budgets. lawn is a scrappy little tool that does the
+              enterprise budgets. Signum is a scrappy little tool that does the
               important stuff for $5/month flat. No per-seat math. No PhD in
               procurement required.
             </p>
@@ -106,7 +106,7 @@ export default function CompareFrameio() {
                 Frame.io
               </div>
               <div className="p-4 md:p-6 font-black uppercase tracking-wider text-sm border-l-2 border-[var(--border)] text-[var(--accent-light)]">
-                lawn
+                Signum
               </div>
             </div>
 
@@ -128,7 +128,7 @@ export default function CompareFrameio() {
                   {row.frameio}
                 </div>
                 <div className="p-4 md:p-6 border-l-2 border-[var(--border)] flex items-center font-bold text-[var(--accent)]">
-                  {row.lawn}
+                  {row.Signum}
                 </div>
               </div>
             ))}
@@ -149,7 +149,7 @@ export default function CompareFrameio() {
             MATH.
           </h2>
           <p className="text-center text-lg text-[var(--foreground-muted)] font-medium mb-16 max-w-lg mx-auto">
-            Frame.io charges $19 per user per month. lawn charges $5 per month.
+            Frame.io charges $19 per user per month. Signum charges $5 per month.
             Not per user. Just $5. Here's what that means annually.
           </p>
 
@@ -157,7 +157,7 @@ export default function CompareFrameio() {
             {teamSizes.map((size) => {
               const savings = annualSavings(size);
               const frameioAnnual = FRAMEIO_PRICE_PER_USER * size * 12;
-              const lawnAnnual = LAWN_PRICE_FLAT * 12;
+              const SignumAnnual = LAWN_PRICE_FLAT * 12;
 
               return (
                 <div
@@ -181,10 +181,10 @@ export default function CompareFrameio() {
                     </div>
                     <div className="flex justify-between items-baseline mb-4">
                       <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
-                        lawn
+                        Signum
                       </span>
                       <span className="font-black text-[var(--accent)]">
-                        ${lawnAnnual}/yr
+                        ${SignumAnnual}/yr
                       </span>
                     </div>
                     <div className="border-t-2 border-[var(--border-subtle)] pt-4 mt-auto">
@@ -273,11 +273,11 @@ export default function CompareFrameio() {
               </div>
             </div>
 
-            {/* Use lawn if... */}
+            {/* Use Signum if... */}
             <div className="border-2 border-[var(--border)] bg-[var(--surface-strong)] text-[var(--foreground-inverse)] shadow-[8px_8px_0px_0px_var(--shadow-accent)]">
               <div className="border-b-2 border-[var(--border)] p-6">
                 <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-[var(--accent-light)]">
-                  Use lawn if...
+                  Use Signum if...
                 </h3>
               </div>
               <div className="p-6">

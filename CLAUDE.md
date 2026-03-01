@@ -1,6 +1,6 @@
-# lawn
+# Signum
 
-Video review platform for creative teams. Built by Theo.
+Video review platform for coaching teams.
 
 ## Design Language
 

@@ -5,9 +5,9 @@ import Homepage from "./-home";
 export const Route = createFileRoute("/")({
   head: () =>
     seoHead({
-      title: "lawn — video review for creative teams",
+      title: "Signum — video review for coaching teams",
       description:
-        "Video review and collaboration for creative teams. Frame-accurate comments, unlimited seats, $5/month flat. The open source Frame.io alternative.",
+        "Video review for coaching teams. Slow-motion playback, timestamped feedback, unlimited seats, $5/month flat. The open source video review platform.",
       path: "/",
       ogImage: "/og/home.png",
     }),

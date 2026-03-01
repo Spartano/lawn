@@ -1,8 +1,8 @@
-# Getting Started with Lawn — A Plain-English Guide
+# Getting Started with Signum — A Plain-English Guide
 
-## What is Lawn?
+## What is Signum?
 
-Lawn is a **video review platform** — think of it like Google Docs, but for video. You upload a video, your team watches it, and everyone can leave comments tied to specific moments in the video. It was built as an open-source alternative to Frame.io.
+Signum is a **video review platform** — think of it like Google Docs, but for video. You upload a video, your team watches it, and everyone can leave comments tied to specific moments in the video. It was built as an open-source alternative to Frame.io.
 
 ### What you can do with it
 
@@ -18,7 +18,7 @@ Lawn is a **video review platform** — think of it like Google Docs, but for vi
 
 ## The Services You Need (and What Each One Does)
 
-Lawn glues together 5 external services. Here's what each one does and whether you actually need to pay for it.
+Signum glues together 5 external services. Here's what each one does and whether you actually need to pay for it.
 
 ### 1. Convex — the backend & database (REQUIRED)
 
@@ -30,7 +30,7 @@ Lawn glues together 5 external services. Here's what each one does and whether y
 
 ### 2. Clerk — user login & authentication (REQUIRED)
 
-**What it does:** Handles sign-up, sign-in, passwords, Google login, etc. When someone logs into your lawn instance, Clerk is doing the work.
+**What it does:** Handles sign-up, sign-in, passwords, Google login, etc. When someone logs into your Signum instance, Clerk is doing the work.
 
 **Cost:** Free for up to 10,000 monthly active users. You will not hit this.
 
@@ -51,7 +51,7 @@ Lawn glues together 5 external services. Here's what each one does and whether y
 
 ### 4. Railway Object Storage (S3-compatible) — file storage (REQUIRED)
 
-**What it does:** Stores the raw uploaded video files. Lawn uses Railway's S3-compatible object storage (not AWS S3 directly, despite the code using the AWS SDK — the SDK works with any S3-compatible service).
+**What it does:** Stores the raw uploaded video files. Signum uses Railway's S3-compatible object storage (not AWS S3 directly, despite the code using the AWS SDK — the SDK works with any S3-compatible service).
 
 **Cost:** Railway's storage is included in their plans. Developer plan starts at $5/month.
 
@@ -68,7 +68,7 @@ Lawn glues together 5 external services. Here's what each one does and whether y
 
 ### 5. Stripe — payments & subscriptions (OPTIONAL for your use case)
 
-**What it does:** Handles billing if you want to charge users. Lawn has built-in subscription plans (Basic at $5/mo, Pro at $15/mo).
+**What it does:** Handles billing if you want to charge users. Signum has built-in subscription plans (Basic at $5/mo, Pro at $15/mo).
 
 **Cost:** 2.9% + $0.30 per transaction.
 
@@ -83,7 +83,7 @@ Lawn glues together 5 external services. Here's what each one does and whether y
 
 ### 6. Vercel — hosting (REQUIRED for deployment)
 
-**What it does:** Hosts the frontend web application. When someone visits your lawn URL, Vercel serves the page.
+**What it does:** Hosts the frontend web application. When someone visits your Signum URL, Vercel serves the page.
 
 **Cost:** Free tier (Hobby) works fine. Pro is $20/month if you need more.
 
@@ -97,12 +97,12 @@ Lawn glues together 5 external services. Here's what each one does and whether y
 
 ```bash
 git clone https://github.com/t3dotgg/lawn.git
-cd lawn
+cd signum
 ```
 
 ### Step 2: Install dependencies
 
-Lawn uses Yarn (v1). If you don't have it:
+Signum uses Yarn (v1). If you don't have it:
 
 ```bash
 npm install -g yarn
@@ -118,7 +118,7 @@ yarn install
 
 1. Go to https://convex.dev and create an account
 2. Install the Convex CLI if you haven't: `npx convex login`
-3. Initialize Convex for this project: `npx convex dev` — this will prompt you to create a new project. Pick a name (e.g., "lawn-coaching")
+3. Initialize Convex for this project: `npx convex dev` — this will prompt you to create a new project. Pick a name (e.g., "signum-coaching")
 4. This creates a `.env.local` file with `CONVEX_DEPLOYMENT` automatically
 5. Note your deployment URL — it looks like `https://your-name-123.convex.cloud`
 
@@ -235,7 +235,7 @@ Open `http://localhost:5296`, sign up, create a team, create a project, upload a
 If you forked the repo, push your fork. If you cloned it, create a new repo and push:
 
 ```bash
-git remote set-url origin https://github.com/YOUR-USERNAME/lawn.git
+git remote set-url origin https://github.com/YOUR-USERNAME/signum.git
 git push -u origin main
 ```
 

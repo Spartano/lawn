@@ -46,7 +46,7 @@ export function MarketingFooter() {
                   to="/compare/frameio"
                   className="hover:text-[#7cb87c] transition-colors"
                 >
-                  lawn vs Frame.io
+                  Signum vs Frame.io
                 </Link>
               </li>
               <li>
@@ -54,7 +54,7 @@ export function MarketingFooter() {
                   to="/compare/wipster"
                   className="hover:text-[#7cb87c] transition-colors"
                 >
-                  lawn vs Wipster
+                  Signum vs Wipster
                 </Link>
               </li>
             </ul>
@@ -89,7 +89,7 @@ export function MarketingFooter() {
             <ul className="space-y-3 text-sm font-bold">
               <li>
                 <a
-                  href="https://github.com/pingdotgg/lawn"
+                  href="https://github.com/pingdotgg/signum"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-[#7cb87c] transition-colors"
@@ -101,9 +101,9 @@ export function MarketingFooter() {
           </div>
         </div>
         <div className="border-t border-[#333] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="font-black text-3xl tracking-tighter">lawn.</span>
+          <span className="font-black text-3xl tracking-tighter">Signum.</span>
           <span className="text-sm text-[#888]">
-            Video review for creative teams.
+            Video review for coaching teams.
           </span>
         </div>
       </div>

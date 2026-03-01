@@ -42,7 +42,7 @@ export default function Homepage() {
       {/* Minimal nav */}
       <nav className={`fixed w-full top-0 z-50 px-6 py-4 flex justify-between items-center transition-all duration-200 ${scrolled ? 'bg-[#f0f0e8] text-[#1a1a1a] border-b-2 border-[#1a1a1a]' : 'bg-transparent text-[#f0f0e8] drop-shadow-md'}`}>
         <div className="flex items-center gap-4">
-          <span className={`text-xl font-black tracking-tighter transition-opacity duration-200 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>lawn.</span>
+          <span className={`text-xl font-black tracking-tighter transition-opacity duration-200 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>Signum.</span>
         </div>
         <div className="flex gap-6 items-center text-sm font-bold uppercase tracking-wide">
           <a href="#pricing" className="hover:underline underline-offset-4">Pricing</a>
@@ -68,7 +68,7 @@ export default function Homepage() {
               textShadow: '8px 8px 0 #1a1a1a, 0 20px 40px rgba(0,0,0,0.5)'
             }}
           >
-            lawn
+            Signum
           </h1>
 
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-12 mt-20 md:mt-24">
@@ -76,10 +76,10 @@ export default function Homepage() {
             {/* Highly Creative Contrast Subheadline Blocks (Stickers) */}
             <div className="flex flex-col items-start gap-4 md:gap-6 max-w-full">
               <div className="bg-[#f0f0e8] text-[#1a1a1a] px-5 py-3 md:px-8 md:py-4 border-2 border-[#1a1a1a] shadow-[6px_6px_0px_0px_var(--shadow-color)] md:shadow-[8px_8px_0px_0px_var(--shadow-color)] -rotate-2 origin-bottom-left max-w-full">
-                <p className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight uppercase leading-tight md:leading-none">Video review for creative teams.</p>
+                <p className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight uppercase leading-tight md:leading-none">Video review for coaching teams.</p>
               </div>
               <div className="bg-[#2d5a2d] text-[#f0f0e8] px-5 py-3 md:px-8 md:py-4 border-2 border-[#1a1a1a] shadow-[6px_6px_0px_0px_var(--shadow-color)] md:shadow-[8px_8px_0px_0px_var(--shadow-color)] rotate-1 origin-top-left ml-2 md:ml-8 max-w-full">
-                <p className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight uppercase leading-tight md:leading-none">Less features. No bull$#!t.</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight uppercase leading-tight md:leading-none">Slow down. Zoom in. Teach.</p>
               </div>
             </div>
 
@@ -102,9 +102,9 @@ export default function Homepage() {
       <section className="border-b-2 border-[#1a1a1a] bg-[#f0f0e8]">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 divide-y-2 md:divide-y-0 md:divide-x-2 divide-[#1a1a1a]">
           {[
-            { id: "01", title: "OPEN SOURCE", desc: "Fully open source. Read the code, fork it, make it yours." },
+            { id: "01", title: "SLOW MOTION", desc: "Play at 0.25x to catch every micro-expression." },
             { id: "02", title: "ACTUALLY FAST", desc: "Instant playback. Built for speed, not loading spinners." },
-            { id: "03", title: "FLAT PRICING", desc: "$5 covers the whole agency. Stop counting seats." },
+            { id: "03", title: "FLAT PRICING", desc: "$5 covers your whole team. Stop counting seats." },
             { id: "04", title: "SIMPLE SHARING", desc: "Just copy the link and send it to your client." },
           ].map((item, i) => (
             <div key={i} className="p-8 lg:p-12 group hover:bg-[#1a1a1a] hover:text-[#f0f0e8] transition-colors flex flex-col">
@@ -125,9 +125,9 @@ export default function Homepage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
             {[
-              { step: "1", action: "UPLOAD", desc: "Drag and drop your cut. We process it instantly." },
+              { step: "1", action: "UPLOAD", desc: "Drag and drop your session recording. Ready in seconds." },
               { step: "2", action: "SHARE", desc: "Send a link. No account required for clients." },
-              { step: "3", action: "REVIEW", desc: "Click to comment on exact frames. Export to your NLE." },
+              { step: "3", action: "REVIEW", desc: "Slow down, pause, and comment on exact moments." },
             ].map((item, i) => (
               <div key={i} className="bg-[#f0f0e8] border-2 border-[#1a1a1a] shadow-[12px_12px_0px_0px_var(--shadow-color)] flex flex-col hover:-translate-y-2 hover:translate-x-2 hover:shadow-[4px_4px_0px_0px_var(--shadow-color)] transition-all">
                 <div className="border-b-2 border-[#1a1a1a] bg-[#1a1a1a] text-[#f0f0e8] p-6 flex justify-between items-end">
@@ -153,7 +153,7 @@ export default function Homepage() {
                 THE<br/>RIVAL.
               </h2>
               <p className="text-xl text-[#888] font-medium max-w-sm">
-                Frame.io is solid software. But you're paying for enterprise features you don't need.
+                Frame.io is solid software. But you're paying for features coaches don't need.
               </p>
             </div>
 
@@ -192,7 +192,7 @@ export default function Homepage() {
                 {/* Us */}
                 <div className="p-8 md:p-12 bg-[#1a1a1a] text-[#f0f0e8]">
                   <div className="text-sm font-bold tracking-widest text-[#7cb87c] mb-2">THE SOLUTION</div>
-                  <div className="text-5xl font-black tracking-tighter mb-8 text-[#7cb87c]">lawn</div>
+                  <div className="text-5xl font-black tracking-tighter mb-8 text-[#7cb87c]">Signum</div>
                   
                   <div className="mb-8">
                     <div className="text-3xl font-black text-[#7cb87c]">$5</div>
@@ -233,11 +233,11 @@ export default function Homepage() {
       <section className="px-6 py-32 bg-[#2d5a2d] text-[#f0f0e8] border-b-2 border-[#1a1a1a]">
         <div className="max-w-5xl mx-auto text-center">
           <blockquote className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-tight mb-8">
-            "I built lawn because I got tired of waiting for Frame.io to load. Video review should be instant."
+            "Body language happens in fractions of a second. Your review tool should let you freeze time."
           </blockquote>
-          <a href="https://x.com/theo" target="_blank" rel="noopener noreferrer" className="inline-block border-2 border-[#f0f0e8] px-6 py-3 font-bold uppercase tracking-wider hover:bg-[#f0f0e8] hover:text-[#2d5a2d] transition-colors">
-            — Theo
-          </a>
+          <div className="inline-block border-2 border-[#f0f0e8] px-6 py-3 font-bold uppercase tracking-wider">
+            — The Coaching Team
+          </div>
         </div>
       </section>
 
@@ -313,10 +313,10 @@ export default function Homepage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            name: "lawn",
+            name: "Signum",
             description:
-              "Video review and collaboration for creative teams. Frame-accurate comments, unlimited seats, flat pricing.",
-            url: "https://lawn.video",
+              "Video review for coaching teams. Slow-motion playback, timestamped feedback, unlimited seats, flat pricing.",
+            url: "https://signum.video",
             applicationCategory: "MultimediaApplication",
             operatingSystem: "Web",
             offers: [
@@ -337,11 +337,6 @@ export default function Homepage() {
                   "Unlimited seats, unlimited projects, unlimited clients, 1TB storage",
               },
             ],
-            creator: {
-              "@type": "Person",
-              name: "Theo",
-              url: "https://x.com/theo",
-            },
           }),
         }}
       />

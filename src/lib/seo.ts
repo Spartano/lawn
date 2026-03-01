@@ -1,5 +1,5 @@
-const SITE_URL = "https://lawn.video";
-const SITE_NAME = "lawn";
+const SITE_URL = "https://signum.video";
+const SITE_NAME = "Signum";
 const DEFAULT_OG_IMAGE = "/og/default.png";
 const TWITTER_HANDLE = "@theo";
 
@@ -20,9 +20,9 @@ export function seoHead({
   type = "website",
   noIndex = false,
 }: SeoOptions) {
-  const fullTitle = title.toLowerCase().includes("lawn")
+  const fullTitle = title.toLowerCase().includes("signum")
     ? title
-    : `${title} | lawn`;
+    : `${title} | Signum`;
   const url = `${SITE_URL}${path}`;
   const imageUrl = ogImage.startsWith("http")
     ? ogImage

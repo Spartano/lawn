@@ -22,8 +22,8 @@ export default function HomepageMono() {
       {/* Minimal nav */}
       <nav className="sticky top-0 z-50 px-6 py-4 flex justify-between items-center bg-[#f0f0e8]">
         <div className="flex items-center gap-4">
-          <span className={`text-xl font-black transition-opacity duration-200 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>lawn</span>
-          <span className={`text-xs text-[#888] hidden sm:inline border-l border-[#ccc] pl-4 transition-opacity duration-200 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>video review</span>
+          <span className={`text-xl font-black transition-opacity duration-200 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>Signum</span>
+          <span className={`text-xs text-[#888] hidden sm:inline border-l border-[#ccc] pl-4 transition-opacity duration-200 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>coaching review</span>
         </div>
         <div className="flex gap-4 text-sm">
           <Link to="/sign-in" className="hover:underline">Sign In</Link>
@@ -34,17 +34,17 @@ export default function HomepageMono() {
       {/* Hero - Massive brand + clear statement */}
       <section className="px-6 pt-8 pb-16">
         <div className="max-w-6xl mx-auto">
-          {/* Giant lawn */}
+          {/* Giant Signum */}
           <h1 className="text-[20vw] sm:text-[18vw] font-black leading-[0.85] tracking-tight">
-            lawn
+            Signum
           </h1>
 
           {/* What it is - immediately clear */}
           <div className="max-w-2xl mt-8">
             <p className="text-2xl sm:text-3xl font-bold leading-tight">
-              Video review for creative teams.
+              Video review for coaching teams.
               <br />
-              <span className="text-[#2d5a2d]">Less features. No bull$#!t.</span>
+              <span className="text-[#2d5a2d]">Slow down. Zoom in. Teach.</span>
             </p>
           </div>
 
@@ -67,10 +67,10 @@ export default function HomepageMono() {
       <section className="border-y-2 border-[#1a1a1a]">
         <div className="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4">
           {[
-            { title: "Frame-accurate", desc: "Comments on exact frames" },
+            { title: "Slow motion", desc: "Review at 0.25x speed" },
             { title: "Unlimited seats", desc: "One price for everyone" },
-            { title: "0.3s response", desc: "Built for speed" },
-            { title: "Any NLE", desc: "No lock-in" },
+            { title: "Timed comments", desc: "Feedback on exact moments" },
+            { title: "Instant share", desc: "Send a link, no signup" },
           ].map((item, i) => (
             <div key={i} className={`p-6 ${i < 3 ? 'border-r-2 border-[#1a1a1a]' : ''} ${i < 2 ? 'lg:border-r-2' : 'lg:border-r-0'}`}>
               <div className="font-black">{item.title}</div>
@@ -83,7 +83,7 @@ export default function HomepageMono() {
       {/* Comparison - straightforward */}
       <section className="px-6 py-16">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-black mb-2">How lawn compares</h2>
+          <h2 className="text-2xl font-black mb-2">How Signum compares</h2>
           <p className="text-[#888] mb-8">Frame.io is solid software. Here's where we differ.</p>
 
           <div className="space-y-6">
@@ -97,7 +97,7 @@ export default function HomepageMono() {
                   <div className="text-sm text-[#888] mt-2">Team of 5 = $1,140/year</div>
                 </div>
                 <div>
-                  <div className="text-[#7cb87c] text-sm mb-1">lawn</div>
+                  <div className="text-[#7cb87c] text-sm mb-1">Signum</div>
                   <div className="text-2xl font-black text-[#7cb87c]">$5/mo total</div>
                   <div className="text-sm text-[#888] mt-2">Team of 5 = $60/year</div>
                 </div>
@@ -119,7 +119,7 @@ export default function HomepageMono() {
                 </ul>
               </div>
               <div className="border-2 border-[#2d5a2d] p-6">
-                <div className="font-black text-[#2d5a2d] mb-2">lawn</div>
+                <div className="font-black text-[#2d5a2d] mb-2">Signum</div>
                 <ul className="text-sm space-y-1">
                   <li>• Works with any software</li>
                   <li>• Simpler, faster interface</li>
@@ -138,9 +138,9 @@ export default function HomepageMono() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
             {[
-              { step: "1", action: "Upload", desc: "your video" },
+              { step: "1", action: "Upload", desc: "your session" },
               { step: "2", action: "Share", desc: "the link" },
-              { step: "3", action: "Click", desc: "to comment" },
+              { step: "3", action: "Review", desc: "every detail" },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-4">
                 <span className="w-16 h-16 bg-[#2d5a2d] flex items-center justify-center text-3xl font-black">
@@ -160,10 +160,10 @@ export default function HomepageMono() {
       <section className="px-6 py-16 border-b-2 border-[#1a1a1a]">
         <div className="max-w-3xl mx-auto text-center">
           <blockquote className="text-2xl sm:text-3xl font-bold leading-tight">
-            "I built lawn because I got tired of waiting for Frame.io to load.
-            Video review should be instant."
+            "Body language happens in fractions of a second.
+            Your review tool should let you freeze time."
           </blockquote>
-          <p className="mt-4 text-[#888]">— <a href="https://x.com/theo" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#1a1a1a]">Theo</a></p>
+          <p className="mt-4 text-[#888]">— The Coaching Team</p>
         </div>
       </section>
 
@@ -188,7 +188,7 @@ export default function HomepageMono() {
       {/* Footer */}
       <footer className="border-t-2 border-[#1a1a1a] px-6 py-8">
         <div className="max-w-5xl mx-auto flex justify-between items-center text-sm">
-          <span className="font-black text-xl">lawn</span>
+          <span className="font-black text-xl">Signum</span>
           <div className="flex gap-6 text-[#888]">
             <a href="/github" className="hover:text-[#1a1a1a]">GitHub</a>
           </div>

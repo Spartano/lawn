@@ -1,6 +1,6 @@
-# lawn
+# Signum
 
-Video review platform for creative teams. Built by Theo.
+Video review platform for coaching teams.
 
 ## IMPORTANT NOTICE
 
@@ -12,7 +12,7 @@ I got tired of Frame.io slowly regressing. I wanted something simple, fast and r
 
 I don't know how much time I'll have to maintain this long term, so I decided to open source it. I have no idea where this project is going long term.
 
-My team is using lawn every day already. We intend to continue, and we intend to keep adding things we need throughout.
+My team is using Signum every day already. We intend to continue, and we intend to keep adding things we need throughout.
 
 ## Docs
 

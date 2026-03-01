@@ -6,7 +6,7 @@ const painPoints = [
     id: "01",
     title: "ADDING A FREELANCER SHOULDN'T COST $19/MO",
     description:
-      'You hired them for a two-week project. Why are you paying a monthly seat fee? lawn is $5/month total. Unlimited seats. Add your whole roster — full-timers, freelancers, that one intern who\'s "really good at Premiere."',
+      'You hired them for a two-week project. Why are you paying a monthly seat fee? Signum is $5/month total. Unlimited seats. Add your whole roster — full-timers, freelancers, that one intern who\'s "really good at Premiere."',
   },
   {
     id: "02",
@@ -32,21 +32,21 @@ const comparisons = [
   {
     size: "5-PERSON TEAM",
     competitor: "$95",
-    lawn: "$5",
+    Signum: "$5",
     saved: "$1,080",
     commentary: "That's a lot of coffee.",
   },
   {
     size: "10-PERSON TEAM",
     competitor: "$190",
-    lawn: "$5",
+    Signum: "$5",
     saved: "$2,220",
     commentary: "A nice camera lens, actually.",
   },
   {
     size: "15 + FREELANCERS",
     competitor: "$285+",
-    lawn: "$5",
+    Signum: "$5",
     saved: "$3,360+",
     commentary: "Almost enough for one more freelancer.",
   },
@@ -79,7 +79,7 @@ export default function ForAgencies() {
               more.
             </p>
             <p className="text-lg text-[#888] font-medium mt-4">
-              lawn is video review for creative teams. Unlimited seats. $5/month.
+              Signum is video review for creative teams. Unlimited seats. $5/month.
               The whole agency, not per editor.
             </p>
           </div>
@@ -151,7 +151,7 @@ export default function ForAgencies() {
                 MATH.
               </h2>
               <p className="text-xl text-[#888] font-medium max-w-sm">
-                Frame.io charges $19/user/month. lawn charges $5/month total.
+                Frame.io charges $19/user/month. Signum charges $5/month total.
                 Here's what that looks like at agency scale.
               </p>
             </div>
@@ -191,7 +191,7 @@ export default function ForAgencies() {
                           LAWN
                         </span>
                         <span className="text-3xl font-black text-[#2d5a2d]">
-                          {row.lawn}
+                          {row.Signum}
                         </span>
                         <span className="text-sm text-[#888] font-bold">
                           /mo

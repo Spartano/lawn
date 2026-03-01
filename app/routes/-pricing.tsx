@@ -133,7 +133,7 @@ export default function PricingPage() {
                 a: "Yes. Sign up and try it. No credit card required to start.",
               },
               {
-                q: "Is lawn really open source?",
+                q: "Is Signum really open source?",
                 a: "Fully. Check our GitHub. Read the code, fork it, whatever you want.",
               },
             ].map((item, i) => (

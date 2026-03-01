@@ -5,7 +5,7 @@ import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const STORAGE_KEY_CLIENT_ID = "lawn.presence.client_id";
+const STORAGE_KEY_CLIENT_ID = "signum.presence.client_id";
 const DEFAULT_HEARTBEAT_INTERVAL_MS = 15_000;
 const DISCONNECT_PATH = "videoPresence:disconnect";
 
