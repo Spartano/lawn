@@ -58,7 +58,7 @@ export interface VideoPlayerHandle {
   seekTo: (time: number, options?: { play?: boolean }) => void;
 }
 
-const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 const AUTO_QUALITY_LEVEL = -1 as const;
 
 type QualityLevelOption = {
@@ -257,7 +257,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     showControls();
 
     const currentIndex = PLAYBACK_RATES.findIndex((rate) => rate === video.playbackRate);
-    const nextIndex = currentIndex === -1 ? 2 : (currentIndex + 1) % PLAYBACK_RATES.length;
+    const nextIndex = currentIndex === -1 ? 3 : (currentIndex + 1) % PLAYBACK_RATES.length;
     const nextRate = PLAYBACK_RATES[nextIndex];
     video.playbackRate = nextRate;
     setPlaybackRate(nextRate);
