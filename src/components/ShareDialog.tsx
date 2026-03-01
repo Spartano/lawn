@@ -122,7 +122,7 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 border-2 border-[#1a1a1a] p-4 bg-[#e8e8e0]">
+        <div className="space-y-3 border-2 border-[#1a1a1a] p-4 bg-[#e8e8e0] overflow-hidden">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-sm text-[#1a1a1a]">Visibility</h3>
@@ -155,15 +155,14 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
           </div>
 
           {publicWatchPath ? (
-            <div className="p-3 border-2 border-[#1a1a1a] bg-[#f0f0e8] space-y-2">
+            <div className="p-3 border-2 border-[#1a1a1a] bg-[#f0f0e8] space-y-2 overflow-hidden">
               <div className="text-xs text-[#666]">Public URL</div>
-              <code className="block text-sm bg-[#e8e8e0] px-2 py-1 font-mono truncate">
+              <code className="block text-sm bg-[#e8e8e0] px-2 py-1 font-mono truncate min-w-0">
                 {publicWatchPath}
               </code>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
                   onClick={handleCopyPublicLink}
                   disabled={video?.visibility !== "public"}
                 >
@@ -172,7 +171,6 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
                   disabled={video?.visibility !== "public"}
                   onClick={() => window.open(publicWatchPath, "_blank")}
                 >
@@ -265,62 +263,64 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
               {shareLinks.map((link) => (
                 <div
                   key={link._id}
-                  className="flex items-center justify-between p-3 border-2 border-[#1a1a1a]"
+                  className="p-3 border-2 border-[#1a1a1a] space-y-2"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <code className="text-sm bg-[#e8e8e0] px-2 py-0.5 font-mono truncate max-w-[200px]">
-                        /share/{link.token}
-                      </code>
-                      {link.isExpired ? (
-                        <Badge variant="destructive">Expired</Badge>
-                      ) : null}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <code className="text-sm bg-[#e8e8e0] px-2 py-0.5 font-mono truncate block min-w-0">
+                          /share/{link.token}
+                        </code>
+                        {link.isExpired ? (
+                          <Badge variant="destructive" className="flex-shrink-0">Expired</Badge>
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-[#888]">
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {link.viewCount} views
-                      </span>
-                      {link.hasPassword ? (
-                        <span className="flex items-center gap-1">
-                          <Lock className="h-3 w-3" />
-                          Protected
-                        </span>
-                      ) : null}
-                      {link.expiresAt ? (
-                        <span>
-                          Expires {formatRelativeTime(link.expiresAt)}
-                        </span>
-                      ) : null}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleCopyLink(link.token)}
+                      >
+                        {copiedId === link.token ? (
+                          <Check className="h-4 w-4 text-[#2d5a2d]" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(`/share/${link.token}`, "_blank")}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-[#dc2626] hover:text-[#dc2626]"
+                        onClick={() => handleDeleteLink(link._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleCopyLink(link.token)}
-                    >
-                      {copiedId === link.token ? (
-                        <Check className="h-4 w-4 text-[#2d5a2d]" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => window.open(`/share/${link.token}`, "_blank")}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-[#dc2626] hover:text-[#dc2626]"
-                      onClick={() => handleDeleteLink(link._id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#888]">
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {link.viewCount} views
+                    </span>
+                    {link.hasPassword ? (
+                      <span className="flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        Protected
+                      </span>
+                    ) : null}
+                    {link.expiresAt ? (
+                      <span>
+                        Expires {formatRelativeTime(link.expiresAt)}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               ))}

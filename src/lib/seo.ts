@@ -1,6 +1,5 @@
-const SITE_URL = "https://signum.video";
+const SITE_URL = "https://signum-two.vercel.app";
 const SITE_NAME = "Signum";
-const DEFAULT_OG_IMAGE = "/og/default.png";
 const TWITTER_HANDLE = "@theo";
 
 type SeoOptions = {
@@ -16,7 +15,7 @@ export function seoHead({
   title,
   description,
   path,
-  ogImage = DEFAULT_OG_IMAGE,
+  ogImage,
   type = "website",
   noIndex = false,
 }: SeoOptions) {
@@ -24,27 +23,32 @@ export function seoHead({
     ? title
     : `${title} | Signum`;
   const url = `${SITE_URL}${path}`;
-  const imageUrl = ogImage.startsWith("http")
-    ? ogImage
-    : `${SITE_URL}${ogImage}`;
 
   const meta: Array<Record<string, string>> = [
     { title: fullTitle },
     { name: "description", content: description },
-    // Open Graph
     { property: "og:title", content: fullTitle },
     { property: "og:description", content: description },
-    { property: "og:image", content: imageUrl },
     { property: "og:url", content: url },
     { property: "og:type", content: type },
     { property: "og:site_name", content: SITE_NAME },
-    // Twitter
-    { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: fullTitle },
     { name: "twitter:description", content: description },
-    { name: "twitter:image", content: imageUrl },
     { name: "twitter:site", content: TWITTER_HANDLE },
   ];
+
+  if (ogImage) {
+    const imageUrl = ogImage.startsWith("http")
+      ? ogImage
+      : `${SITE_URL}${ogImage}`;
+    meta.push(
+      { property: "og:image", content: imageUrl },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: imageUrl },
+    );
+  } else {
+    meta.push({ name: "twitter:card", content: "summary" });
+  }
 
   if (noIndex) {
     meta.push({ name: "robots", content: "noindex,nofollow" });
