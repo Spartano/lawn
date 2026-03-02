@@ -5,8 +5,8 @@ import SharePage from "./-share";
 export const Route = createFileRoute("/share/$token")({
   head: () =>
     seoHead({
-      title: "Shared video",
-      description: "Review this shared video on Signum.",
+      title: "Shared media",
+      description: "Review this shared content on Signum.",
       path: "/share",
       noIndex: true,
     }),

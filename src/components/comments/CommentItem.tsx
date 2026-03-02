@@ -31,10 +31,11 @@ interface Comment {
 
 interface CommentItemProps {
   comment: Comment;
-  onTimestampClick: (seconds: number) => void;
+  onTimestampClick?: (seconds: number) => void;
   isHighlighted?: boolean;
   isReply?: boolean;
   canResolve?: boolean;
+  hideTimestamp?: boolean;
 }
 
 export function CommentItem({
@@ -43,6 +44,7 @@ export function CommentItem({
   isHighlighted = false,
   isReply = false,
   canResolve = false,
+  hideTimestamp = false,
 }: CommentItemProps) {
   const [isReplying, setIsReplying] = useState(false);
   const toggleResolved = useMutation(api.comments.toggleResolved);
@@ -89,12 +91,14 @@ export function CommentItem({
               <span className="font-bold text-sm text-[#1a1a1a] truncate">
                 {comment.userName}
               </span>
-              <button
-                onClick={() => onTimestampClick(comment.timestampSeconds)}
-                className="text-xs text-[#2d5a2d] hover:text-[#1a1a1a] font-mono font-bold shrink-0"
-              >
-                {formatTimestamp(comment.timestampSeconds)}
-              </button>
+              {!hideTimestamp && (
+                <button
+                  onClick={() => onTimestampClick?.(comment.timestampSeconds)}
+                  className="text-xs text-[#2d5a2d] hover:text-[#1a1a1a] font-mono font-bold shrink-0"
+                >
+                  {formatTimestamp(comment.timestampSeconds)}
+                </button>
+              )}
               {comment.resolved && (
                 <Badge variant="success" className="text-[10px] shrink-0">
                   Resolved

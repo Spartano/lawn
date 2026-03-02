@@ -23,6 +23,7 @@ export default function WatchPage() {
   const [playbackSession, setPlaybackSession] = useState<{
     url: string;
     posterUrl: string;
+    mediaType?: string;
   } | null>(null);
   const [isLoadingPlayback, setIsLoadingPlayback] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
@@ -33,8 +34,14 @@ export default function WatchPage() {
   const [mobileCommentsOpen, setMobileCommentsOpen] = useState(false);
   const playerRef = useRef<VideoPlayerHandle | null>(null);
 
+  const videoMediaType = (videoData?.video as { mediaType?: string } | undefined)?.mediaType;
+  const isImage = videoMediaType === "image";
+  const canLoadPlayback = isImage
+    ? Boolean(videoData?.video)
+    : Boolean(videoData?.video?.muxPlaybackId);
+
   useEffect(() => {
-    if (!videoData?.video?.muxPlaybackId) {
+    if (!canLoadPlayback) {
       setPlaybackSession(null);
       return;
     }
@@ -60,7 +67,7 @@ export default function WatchPage() {
     return () => {
       cancelled = true;
     };
-  }, [getPlaybackSession, publicId, videoData?.video?.muxPlaybackId]);
+  }, [getPlaybackSession, publicId, canLoadPlayback]);
 
   const flattenedComments = useMemo(() => {
     if (!comments) return [] as Array<{ _id: string; timestampSeconds: number; resolved: boolean }>;
@@ -119,9 +126,9 @@ export default function WatchPage() {
             <div className="mx-auto w-12 h-12 bg-[#dc2626]/10 flex items-center justify-center mb-4 border-2 border-[#dc2626]">
               <AlertCircle className="h-6 w-6 text-[#dc2626]" />
             </div>
-            <CardTitle>Video unavailable</CardTitle>
+            <CardTitle>Unavailable</CardTitle>
             <CardDescription>
-              This video is private, invalid, or no longer available.
+              This content is private, invalid, or no longer available.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -152,7 +159,7 @@ export default function WatchPage() {
           <h1 className="text-base font-black truncate max-w-[150px] sm:max-w-[300px]">{video.title}</h1>
         </div>
         <div className="flex items-center gap-3 text-xs text-[#888]">
-          {video.duration && (
+          {!isImage && video.duration && (
             <>
               <span className="hidden sm:inline text-[#ccc]">·</span>
               <span className="hidden sm:inline font-mono">{formatDuration(video.duration)}</span>
@@ -174,9 +181,17 @@ export default function WatchPage() {
 
       {/* Main content - horizontal split */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Video player area */}
+        {/* Media viewer area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-black">
-          {playbackSession?.url ? (
+          {playbackSession?.mediaType === "image" && playbackSession?.url ? (
+            <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
+              <img
+                src={playbackSession.url}
+                alt={video.title}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+          ) : playbackSession?.url ? (
             <VideoPlayer
               ref={playerRef}
               src={playbackSession.url}
@@ -222,13 +237,15 @@ export default function WatchPage() {
                   <article key={comment._id} className="border-2 border-[#1a1a1a] bg-[#f0f0e8] p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm font-bold text-[#1a1a1a]">{comment.userName}</div>
-                      <button
-                        type="button"
-                        className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
-                        onClick={() => playerRef.current?.seekTo(comment.timestampSeconds, { play: true })}
-                      >
-                        {formatTimestamp(comment.timestampSeconds)}
-                      </button>
+                      {!isImage && (
+                        <button
+                          type="button"
+                          className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
+                          onClick={() => playerRef.current?.seekTo(comment.timestampSeconds, { play: true })}
+                        >
+                          {formatTimestamp(comment.timestampSeconds)}
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm text-[#1a1a1a] mt-1 whitespace-pre-wrap">{comment.text}</p>
                     <p className="text-[11px] text-[#888] mt-1">{formatRelativeTime(comment._creationTime)}</p>
@@ -239,13 +256,15 @@ export default function WatchPage() {
                           <div key={reply._id} className="text-sm">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-[#1a1a1a]">{reply.userName}</span>
-                              <button
-                                type="button"
-                                className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
-                                onClick={() => playerRef.current?.seekTo(reply.timestampSeconds, { play: true })}
-                              >
-                                {formatTimestamp(reply.timestampSeconds)}
-                              </button>
+                              {!isImage && (
+                                <button
+                                  type="button"
+                                  className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
+                                  onClick={() => playerRef.current?.seekTo(reply.timestampSeconds, { play: true })}
+                                >
+                                  {formatTimestamp(reply.timestampSeconds)}
+                                </button>
+                              )}
                             </div>
                             <p className="text-[#1a1a1a] whitespace-pre-wrap">{reply.text}</p>
                           </div>
@@ -261,10 +280,12 @@ export default function WatchPage() {
           <div className="flex-shrink-0 border-t-2 border-[#1a1a1a] bg-[#f0f0e8] p-4">
             {isUserLoaded && user ? (
               <form onSubmit={handleSubmitComment} className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-[#666]">
-                  <Clock className="h-3.5 w-3.5" />
-                  Comment at {formatTimestamp(currentTime)}
-                </div>
+                {!isImage && (
+                  <div className="flex items-center gap-2 text-xs text-[#666]">
+                    <Clock className="h-3.5 w-3.5" />
+                    Comment at {formatTimestamp(currentTime)}
+                  </div>
+                )}
                 <Textarea
                   value={commentText}
                   onChange={(event) => setCommentText(event.target.value)}
@@ -325,16 +346,18 @@ export default function WatchPage() {
                   <article key={comment._id} className="border-2 border-[#1a1a1a] bg-[#f0f0e8] p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-sm font-bold text-[#1a1a1a]">{comment.userName}</div>
-                      <button
-                        type="button"
-                        className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
-                        onClick={() => {
-                          playerRef.current?.seekTo(comment.timestampSeconds, { play: true });
-                          setMobileCommentsOpen(false);
-                        }}
-                      >
-                        {formatTimestamp(comment.timestampSeconds)}
-                      </button>
+                      {!isImage && (
+                        <button
+                          type="button"
+                          className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
+                          onClick={() => {
+                            playerRef.current?.seekTo(comment.timestampSeconds, { play: true });
+                            setMobileCommentsOpen(false);
+                          }}
+                        >
+                          {formatTimestamp(comment.timestampSeconds)}
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm text-[#1a1a1a] mt-1 whitespace-pre-wrap">{comment.text}</p>
                     <p className="text-[11px] text-[#888] mt-1">{formatRelativeTime(comment._creationTime)}</p>
@@ -345,16 +368,18 @@ export default function WatchPage() {
                           <div key={reply._id} className="text-sm">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-[#1a1a1a]">{reply.userName}</span>
-                              <button
-                                type="button"
-                                className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
-                                onClick={() => {
-                                  playerRef.current?.seekTo(reply.timestampSeconds, { play: true });
-                                  setMobileCommentsOpen(false);
-                                }}
-                              >
-                                {formatTimestamp(reply.timestampSeconds)}
-                              </button>
+                              {!isImage && (
+                                <button
+                                  type="button"
+                                  className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
+                                  onClick={() => {
+                                    playerRef.current?.seekTo(reply.timestampSeconds, { play: true });
+                                    setMobileCommentsOpen(false);
+                                  }}
+                                >
+                                  {formatTimestamp(reply.timestampSeconds)}
+                                </button>
+                              )}
                             </div>
                             <p className="text-[#1a1a1a] whitespace-pre-wrap">{reply.text}</p>
                           </div>
@@ -370,10 +395,12 @@ export default function WatchPage() {
           <div className="flex-shrink-0 border-t-2 border-[#1a1a1a] bg-[#f0f0e8] p-4 pb-safe">
             {isUserLoaded && user ? (
               <form onSubmit={handleSubmitComment} className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-[#666]">
-                  <Clock className="h-3.5 w-3.5" />
-                  Comment at {formatTimestamp(currentTime)}
-                </div>
+                {!isImage && (
+                  <div className="flex items-center gap-2 text-xs text-[#666]">
+                    <Clock className="h-3.5 w-3.5" />
+                    Comment at {formatTimestamp(currentTime)}
+                  </div>
+                )}
                 <Textarea
                   value={commentText}
                   onChange={(event) => setCommentText(event.target.value)}

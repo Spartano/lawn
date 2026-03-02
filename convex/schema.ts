@@ -71,6 +71,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     visibility: v.union(v.literal("public"), v.literal("private")),
     publicId: v.string(),
+    mediaType: v.optional(v.union(v.literal("video"), v.literal("image"))),
     // Mux video references
     muxUploadId: v.optional(v.string()),
     muxAssetId: v.optional(v.string()),
@@ -133,6 +134,9 @@ export default defineSchema({
     failedAccessAttempts: v.optional(v.number()),
     lockedUntil: v.optional(v.number()),
     viewCount: v.number(),
+    burnAfterReading: v.optional(v.boolean()),
+    burnGraceMs: v.optional(v.number()),
+    firstViewedAt: v.optional(v.number()),
   })
     .index("by_token", ["token"])
     .index("by_video", ["videoId"]),
@@ -145,4 +149,60 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_share_link", ["shareLinkId"]),
+
+  intakeForms: defineTable({
+    teamId: v.id("teams"),
+    name: v.string(),
+    slug: v.string(),
+    instructions: v.string(),
+    isActive: v.boolean(),
+    autoSendMediaId: v.optional(v.id("videos")),
+    autoSendShareOptions: v.optional(
+      v.object({
+        burnAfterReading: v.boolean(),
+        expiresInDays: v.optional(v.number()),
+        password: v.optional(v.string()),
+      })
+    ),
+    customFields: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        type: v.union(
+          v.literal("text"),
+          v.literal("textarea"),
+          v.literal("select"),
+          v.literal("number")
+        ),
+        required: v.boolean(),
+        options: v.optional(v.array(v.string())),
+      })
+    ),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_slug", ["slug"]),
+
+  intakeSubmissions: defineTable({
+    formId: v.id("intakeForms"),
+    status: v.union(
+      v.literal("chatting"),
+      v.literal("qualified"),
+      v.literal("rejected")
+    ),
+    contactName: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    formData: v.optional(v.any()),
+    chatHistory: v.array(
+      v.object({
+        role: v.union(v.literal("assistant"), v.literal("user")),
+        content: v.string(),
+        timestamp: v.number(),
+      })
+    ),
+    aiDecision: v.optional(v.string()),
+    shareLinkToken: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_form", ["formId"])
+    .index("by_form_and_status", ["formId", "status"]),
 });

@@ -12,9 +12,10 @@ type ThreadedComments = FunctionReturnType<typeof api.comments.getThreaded>;
 interface CommentListProps {
   videoId: Id<"videos">;
   comments?: ThreadedComments;
-  onTimestampClick: (seconds: number) => void;
+  onTimestampClick?: (seconds: number) => void;
   highlightedCommentId?: Id<"comments">;
   canResolve?: boolean;
+  hideTimestamps?: boolean;
 }
 
 export function CommentList({
@@ -23,6 +24,7 @@ export function CommentList({
   onTimestampClick,
   highlightedCommentId,
   canResolve = false,
+  hideTimestamps = false,
 }: CommentListProps) {
   const queriedComments = useQuery(api.comments.getThreaded, { videoId });
   const comments = providedComments ?? queriedComments;
@@ -37,8 +39,7 @@ export function CommentList({
     return (
       <div className="h-full flex items-center justify-center p-6">
         <p className="text-[#888] text-sm text-center">
-          No comments yet.<br />
-          Click on the timeline to add one.
+          No comments yet.
         </p>
       </div>
     );
@@ -54,6 +55,7 @@ export function CommentList({
               onTimestampClick={onTimestampClick}
               isHighlighted={highlightedCommentId === comment._id}
               canResolve={canResolve}
+              hideTimestamp={hideTimestamps}
             />
             {comment.replies.length > 0 && (
               <div className="pl-14 pr-4 pb-4 space-y-4 relative">
@@ -66,6 +68,7 @@ export function CommentList({
                     isHighlighted={highlightedCommentId === reply._id}
                     isReply
                     canResolve={canResolve}
+                    hideTimestamp={hideTimestamps}
                   />
                 ))}
               </div>

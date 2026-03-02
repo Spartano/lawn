@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Folder, Plus, MoreVertical, Trash2, Users, ArrowRight, CreditCard } from "lucide-react";
+import { Folder, Plus, MoreVertical, Trash2, Users, ArrowRight, CreditCard, ClipboardList } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MemberInvite } from "@/components/teams/MemberInvite";
 import { cn } from "@/lib/utils";
-import { projectPath, teamSettingsPath } from "@/lib/routes";
+import { intakePath, projectPath, teamSettingsPath } from "@/lib/routes";
 import { Id } from "@convex/_generated/dataModel";
 import { useRoutePrewarmIntent } from "@/lib/useRoutePrewarmIntent";
 import { prewarmProject } from "./-project.data";
@@ -41,7 +41,7 @@ type TeamProjectCardProps = {
   project: {
     _id: Id<"projects">;
     name: string;
-    videoCount: number;
+    mediaCount: number;
   };
   canCreateProject: boolean;
   onOpen: () => void;
@@ -73,7 +73,7 @@ function TeamProjectCard({
         <div className="flex-1 min-w-0">
           <CardTitle className="text-base truncate">{project.name}</CardTitle>
           <CardDescription className="mt-1">
-            {project.videoCount} video{project.videoCount !== 1 ? "s" : ""}
+            {project.mediaCount} item{project.mediaCount !== 1 ? "s" : ""}
           </CardDescription>
         </div>
         {canCreateProject && (
@@ -193,6 +193,15 @@ export default function TeamPage() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <DashboardHeader paths={[{ label: team?.slug ?? "team" }]}>
+        {team && (
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: intakePath(team.slug) })}
+          >
+            <ClipboardList className="sm:mr-1.5 h-4 w-4" />
+            <span className="hidden sm:inline">Intake</span>
+          </Button>
+        )}
         {canAccessBilling && team && (
           <Button
             variant="outline"
@@ -253,7 +262,7 @@ export default function TeamPage() {
                 <CardTitle className="text-lg">No projects yet</CardTitle>
                 <CardDescription>
                   {hasActiveSubscription
-                    ? "Create your first project to start uploading videos."
+                    ? "Create your first project to start uploading media."
                     : "Activate billing first, then create your first project."}
                 </CardDescription>
               </CardHeader>
@@ -311,7 +320,7 @@ export default function TeamPage() {
             <DialogHeader>
               <DialogTitle>Create project</DialogTitle>
               <DialogDescription>
-                Projects help you organize related videos together.
+                Projects help you organize related media together.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">

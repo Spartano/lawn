@@ -31,16 +31,15 @@ export const list = query({
       .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
       .collect();
 
-    // Get video counts for each project
     const projectsWithCounts = await Promise.all(
       projects.map(async (project) => {
-        const videos = await ctx.db
+        const media = await ctx.db
           .query("videos")
           .withIndex("by_project", (q) => q.eq("projectId", project._id))
           .collect();
         return {
           ...project,
-          videoCount: videos.length,
+          mediaCount: media.length,
         };
       })
     );

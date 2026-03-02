@@ -5,8 +5,8 @@ import WatchPage from "./-watch";
 export const Route = createFileRoute("/watch/$publicId")({
   head: ({ params }) =>
     seoHead({
-      title: "Watch video",
-      description: "Watch and review this video on Signum.",
+      title: "Watch",
+      description: "Watch and review on Signum.",
       path: `/watch/${params.publicId}`,
     }),
   component: WatchPage,

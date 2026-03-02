@@ -86,7 +86,7 @@ export function UploadProgress({
       )}
 
       {status === "processing" && (
-        <p className="text-xs text-[#888] mt-2">Processing video...</p>
+        <p className="text-xs text-[#888] mt-2">Processing...</p>
       )}
 
       {status === "error" && error && (

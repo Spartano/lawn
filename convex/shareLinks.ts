@@ -5,7 +5,11 @@ import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, MutationCtx } from "./_generated/server";
 import { identityName, requireVideoAccess } from "./auth";
 import { generateUniqueToken, hashPassword, verifyPassword } from "./security";
-import { findShareLinkByToken, issueShareAccessGrant } from "./shareAccess";
+import {
+  findShareLinkByToken,
+  issueShareAccessGrant,
+  resolveActiveShareGrant,
+} from "./shareAccess";
 
 const shareLinkStatusValidator = v.union(
   v.literal("missing"),
@@ -87,6 +91,8 @@ export const create = mutation({
     expiresInDays: v.optional(v.number()),
     allowDownload: v.optional(v.boolean()),
     password: v.optional(v.string()),
+    burnAfterReading: v.optional(v.boolean()),
+    burnGraceMs: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { user } = await requireVideoAccess(ctx, args.videoId, "member");
@@ -112,6 +118,9 @@ export const create = mutation({
       failedAccessAttempts: 0,
       lockedUntil: undefined,
       viewCount: 0,
+      burnAfterReading: args.burnAfterReading ?? false,
+      burnGraceMs: args.burnAfterReading ? args.burnGraceMs : undefined,
+      firstViewedAt: undefined,
     });
 
     return { token };
@@ -128,20 +137,37 @@ export const list = query({
       .withIndex("by_video", (q) => q.eq("videoId", args.videoId))
       .collect();
 
-    const linksWithCreator = links.map((link) => ({
-      _id: link._id,
-      _creationTime: link._creationTime,
-      videoId: link.videoId,
-      token: link.token,
-      createdByClerkId: link.createdByClerkId,
-      createdByName: link.createdByName,
-      expiresAt: link.expiresAt,
-      allowDownload: link.allowDownload,
-      viewCount: link.viewCount,
-      hasPassword: hasPasswordProtection(link),
-      creatorName: link.createdByName,
-      isExpired: link.expiresAt ? link.expiresAt < Date.now() : false,
-    }));
+    const now = Date.now();
+    const linksWithCreator = links.map((link) => {
+      let isBurnExpired = false;
+      if (link.burnAfterReading && link.firstViewedAt) {
+        if (link.burnGraceMs !== undefined) {
+          isBurnExpired = link.firstViewedAt + link.burnGraceMs < now;
+        } else {
+          isBurnExpired = true;
+        }
+      }
+      const isTimeExpired = link.expiresAt
+        ? link.expiresAt < Date.now()
+        : false;
+      return {
+        _id: link._id,
+        _creationTime: link._creationTime,
+        videoId: link.videoId,
+        token: link.token,
+        createdByClerkId: link.createdByClerkId,
+        createdByName: link.createdByName,
+        expiresAt: link.expiresAt,
+        allowDownload: link.allowDownload,
+        viewCount: link.viewCount,
+        hasPassword: hasPasswordProtection(link),
+        creatorName: link.createdByName,
+        isExpired: isTimeExpired || isBurnExpired,
+        burnAfterReading: link.burnAfterReading ?? false,
+        burnGraceMs: link.burnGraceMs,
+        firstViewedAt: link.firstViewedAt,
+      };
+    });
 
     return linksWithCreator;
   },
@@ -186,7 +212,9 @@ export const update = mutation({
     }
 
     if (args.password !== undefined) {
-      const normalizedPassword = normalizeProvidedPassword(args.password ?? undefined);
+      const normalizedPassword = normalizeProvidedPassword(
+        args.password ?? undefined,
+      );
       if (normalizedPassword) {
         updates.passwordHash = await hashPassword(normalizedPassword);
         updates.password = undefined;
@@ -218,6 +246,16 @@ export const getByToken = query({
       return { status: "expired" as const };
     }
 
+    if (link.burnAfterReading && link.firstViewedAt) {
+      if (link.burnGraceMs !== undefined) {
+        if (link.firstViewedAt + link.burnGraceMs < Date.now()) {
+          return { status: "expired" as const };
+        }
+      } else {
+        return { status: "expired" as const };
+      }
+    }
+
     const video = await ctx.db.get(link.videoId);
     if (!video || video.status !== "ready") {
       return { status: "missing" as const };
@@ -241,7 +279,10 @@ export const issueAccessGrant = mutation({
     grantToken: v.union(v.string(), v.null()),
   }),
   handler: async (ctx, args) => {
-    const globalAccessLimit = await shareLinkRateLimiter.limit(ctx, "grantGlobal");
+    const globalAccessLimit = await shareLinkRateLimiter.limit(
+      ctx,
+      "grantGlobal",
+    );
     if (!globalAccessLimit.ok) {
       return { ok: false, grantToken: null };
     }
@@ -263,6 +304,16 @@ export const issueAccessGrant = mutation({
 
     if (link.expiresAt && link.expiresAt <= now) {
       return { ok: false, grantToken: null };
+    }
+
+    if (link.burnAfterReading && link.firstViewedAt) {
+      if (link.burnGraceMs !== undefined) {
+        if (link.firstViewedAt + link.burnGraceMs <= now) {
+          return { ok: false, grantToken: null };
+        }
+      } else {
+        return { ok: false, grantToken: null };
+      }
     }
 
     const video = await ctx.db.get(link.videoId);
@@ -320,13 +371,30 @@ export const issueAccessGrant = mutation({
 
     const grantToken = await issueShareAccessGrant(ctx, link._id);
 
-    await ctx.db.patch(link._id, {
+    const viewPatch: Partial<Doc<"shareLinks">> = {
       viewCount: link.viewCount + 1,
-    });
+    };
+    if (link.burnAfterReading && !link.firstViewedAt && link.burnGraceMs !== undefined) {
+      viewPatch.firstViewedAt = now;
+    }
+    await ctx.db.patch(link._id, viewPatch);
 
     return {
       ok: true,
       grantToken,
     };
+  },
+});
+
+export const burnShareLink = mutation({
+  args: { grantToken: v.string() },
+  handler: async (ctx, args) => {
+    const resolved = await resolveActiveShareGrant(ctx, args.grantToken);
+    if (!resolved) return;
+
+    const { shareLink } = resolved;
+    if (!shareLink.burnAfterReading || shareLink.firstViewedAt) return;
+
+    await ctx.db.patch(shareLink._id, { firstViewedAt: Date.now() });
   },
 });

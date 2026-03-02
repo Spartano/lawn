@@ -17,3 +17,7 @@ export function projectPath(teamSlug: string, projectId: string) {
 export function videoPath(teamSlug: string, projectId: string, videoId: string) {
   return `/dashboard/${teamSlug}/${projectId}/${videoId}`;
 }
+
+export function intakePath(teamSlug: string) {
+  return `/dashboard/${teamSlug}/intake`;
+}

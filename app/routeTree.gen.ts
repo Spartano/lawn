@@ -21,6 +21,7 @@ import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as IntakeSlugRouteImport } from './routes/intake.$slug'
 import { Route as ForVideoEditorsRouteImport } from './routes/for.video-editors'
 import { Route as ForAgenciesRouteImport } from './routes/for.agencies'
 import { Route as DashboardTeamSlugRouteImport } from './routes/dashboard/$teamSlug'
@@ -28,6 +29,7 @@ import { Route as CompareWipsterRouteImport } from './routes/compare.wipster'
 import { Route as CompareFrameioRouteImport } from './routes/compare.frameio'
 import { Route as DashboardTeamSlugIndexRouteImport } from './routes/dashboard/$teamSlug.index'
 import { Route as DashboardTeamSlugSettingsRouteImport } from './routes/dashboard/$teamSlug.settings'
+import { Route as DashboardTeamSlugIntakeRouteImport } from './routes/dashboard/$teamSlug.intake'
 import { Route as DashboardTeamSlugProjectIdRouteImport } from './routes/dashboard/$teamSlug.$projectId'
 import { Route as DashboardTeamSlugProjectIdIndexRouteImport } from './routes/dashboard/$teamSlug.$projectId.index'
 import { Route as DashboardTeamSlugProjectIdVideoIdRouteImport } from './routes/dashboard/$teamSlug.$projectId.$videoId'
@@ -92,6 +94,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IntakeSlugRoute = IntakeSlugRouteImport.update({
+  id: '/intake/$slug',
+  path: '/intake/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForVideoEditorsRoute = ForVideoEditorsRouteImport.update({
   id: '/for/video-editors',
   path: '/for/video-editors',
@@ -128,6 +135,11 @@ const DashboardTeamSlugSettingsRoute =
     path: '/settings',
     getParentRoute: () => DashboardTeamSlugRoute,
   } as any)
+const DashboardTeamSlugIntakeRoute = DashboardTeamSlugIntakeRouteImport.update({
+  id: '/intake',
+  path: '/intake',
+  getParentRoute: () => DashboardTeamSlugRoute,
+} as any)
 const DashboardTeamSlugProjectIdRoute =
   DashboardTeamSlugProjectIdRouteImport.update({
     id: '/$projectId',
@@ -159,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/$teamSlug': typeof DashboardTeamSlugRouteWithChildren
   '/for/agencies': typeof ForAgenciesRoute
   '/for/video-editors': typeof ForVideoEditorsRoute
+  '/intake/$slug': typeof IntakeSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/share/$token': typeof ShareTokenRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -166,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/watch/$publicId': typeof WatchPublicIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/$teamSlug/$projectId': typeof DashboardTeamSlugProjectIdRouteWithChildren
+  '/dashboard/$teamSlug/intake': typeof DashboardTeamSlugIntakeRoute
   '/dashboard/$teamSlug/settings': typeof DashboardTeamSlugSettingsRoute
   '/dashboard/$teamSlug/': typeof DashboardTeamSlugIndexRoute
   '/dashboard/$teamSlug/$projectId/$videoId': typeof DashboardTeamSlugProjectIdVideoIdRoute
@@ -181,12 +195,14 @@ export interface FileRoutesByTo {
   '/compare/wipster': typeof CompareWipsterRoute
   '/for/agencies': typeof ForAgenciesRoute
   '/for/video-editors': typeof ForVideoEditorsRoute
+  '/intake/$slug': typeof IntakeSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/share/$token': typeof ShareTokenRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/watch/$publicId': typeof WatchPublicIdRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/$teamSlug/intake': typeof DashboardTeamSlugIntakeRoute
   '/dashboard/$teamSlug/settings': typeof DashboardTeamSlugSettingsRoute
   '/dashboard/$teamSlug': typeof DashboardTeamSlugIndexRoute
   '/dashboard/$teamSlug/$projectId/$videoId': typeof DashboardTeamSlugProjectIdVideoIdRoute
@@ -205,6 +221,7 @@ export interface FileRoutesById {
   '/dashboard/$teamSlug': typeof DashboardTeamSlugRouteWithChildren
   '/for/agencies': typeof ForAgenciesRoute
   '/for/video-editors': typeof ForVideoEditorsRoute
+  '/intake/$slug': typeof IntakeSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/share/$token': typeof ShareTokenRoute
   '/sign-in/$': typeof SignInSplatRoute
@@ -212,6 +229,7 @@ export interface FileRoutesById {
   '/watch/$publicId': typeof WatchPublicIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/$teamSlug/$projectId': typeof DashboardTeamSlugProjectIdRouteWithChildren
+  '/dashboard/$teamSlug/intake': typeof DashboardTeamSlugIntakeRoute
   '/dashboard/$teamSlug/settings': typeof DashboardTeamSlugSettingsRoute
   '/dashboard/$teamSlug/': typeof DashboardTeamSlugIndexRoute
   '/dashboard/$teamSlug/$projectId/$videoId': typeof DashboardTeamSlugProjectIdVideoIdRoute
@@ -231,6 +249,7 @@ export interface FileRouteTypes {
     | '/dashboard/$teamSlug'
     | '/for/agencies'
     | '/for/video-editors'
+    | '/intake/$slug'
     | '/invite/$token'
     | '/share/$token'
     | '/sign-in/$'
@@ -238,6 +257,7 @@ export interface FileRouteTypes {
     | '/watch/$publicId'
     | '/dashboard/'
     | '/dashboard/$teamSlug/$projectId'
+    | '/dashboard/$teamSlug/intake'
     | '/dashboard/$teamSlug/settings'
     | '/dashboard/$teamSlug/'
     | '/dashboard/$teamSlug/$projectId/$videoId'
@@ -253,12 +273,14 @@ export interface FileRouteTypes {
     | '/compare/wipster'
     | '/for/agencies'
     | '/for/video-editors'
+    | '/intake/$slug'
     | '/invite/$token'
     | '/share/$token'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/watch/$publicId'
     | '/dashboard'
+    | '/dashboard/$teamSlug/intake'
     | '/dashboard/$teamSlug/settings'
     | '/dashboard/$teamSlug'
     | '/dashboard/$teamSlug/$projectId/$videoId'
@@ -276,6 +298,7 @@ export interface FileRouteTypes {
     | '/dashboard/$teamSlug'
     | '/for/agencies'
     | '/for/video-editors'
+    | '/intake/$slug'
     | '/invite/$token'
     | '/share/$token'
     | '/sign-in/$'
@@ -283,6 +306,7 @@ export interface FileRouteTypes {
     | '/watch/$publicId'
     | '/dashboard/'
     | '/dashboard/$teamSlug/$projectId'
+    | '/dashboard/$teamSlug/intake'
     | '/dashboard/$teamSlug/settings'
     | '/dashboard/$teamSlug/'
     | '/dashboard/$teamSlug/$projectId/$videoId'
@@ -300,6 +324,7 @@ export interface RootRouteChildren {
   CompareWipsterRoute: typeof CompareWipsterRoute
   ForAgenciesRoute: typeof ForAgenciesRoute
   ForVideoEditorsRoute: typeof ForVideoEditorsRoute
+  IntakeSlugRoute: typeof IntakeSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ShareTokenRoute: typeof ShareTokenRoute
   WatchPublicIdRoute: typeof WatchPublicIdRoute
@@ -391,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/intake/$slug': {
+      id: '/intake/$slug'
+      path: '/intake/$slug'
+      fullPath: '/intake/$slug'
+      preLoaderRoute: typeof IntakeSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/for/video-editors': {
       id: '/for/video-editors'
       path: '/for/video-editors'
@@ -440,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardTeamSlugSettingsRouteImport
       parentRoute: typeof DashboardTeamSlugRoute
     }
+    '/dashboard/$teamSlug/intake': {
+      id: '/dashboard/$teamSlug/intake'
+      path: '/intake'
+      fullPath: '/dashboard/$teamSlug/intake'
+      preLoaderRoute: typeof DashboardTeamSlugIntakeRouteImport
+      parentRoute: typeof DashboardTeamSlugRoute
+    }
     '/dashboard/$teamSlug/$projectId': {
       id: '/dashboard/$teamSlug/$projectId'
       path: '/$projectId'
@@ -483,12 +522,14 @@ const DashboardTeamSlugProjectIdRouteWithChildren =
 
 interface DashboardTeamSlugRouteChildren {
   DashboardTeamSlugProjectIdRoute: typeof DashboardTeamSlugProjectIdRouteWithChildren
+  DashboardTeamSlugIntakeRoute: typeof DashboardTeamSlugIntakeRoute
   DashboardTeamSlugSettingsRoute: typeof DashboardTeamSlugSettingsRoute
   DashboardTeamSlugIndexRoute: typeof DashboardTeamSlugIndexRoute
 }
 
 const DashboardTeamSlugRouteChildren: DashboardTeamSlugRouteChildren = {
   DashboardTeamSlugProjectIdRoute: DashboardTeamSlugProjectIdRouteWithChildren,
+  DashboardTeamSlugIntakeRoute: DashboardTeamSlugIntakeRoute,
   DashboardTeamSlugSettingsRoute: DashboardTeamSlugSettingsRoute,
   DashboardTeamSlugIndexRoute: DashboardTeamSlugIndexRoute,
 }
@@ -543,6 +584,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareWipsterRoute: CompareWipsterRoute,
   ForAgenciesRoute: ForAgenciesRoute,
   ForVideoEditorsRoute: ForVideoEditorsRoute,
+  IntakeSlugRoute: IntakeSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
   ShareTokenRoute: ShareTokenRoute,
   WatchPublicIdRoute: WatchPublicIdRoute,

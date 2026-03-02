@@ -62,6 +62,9 @@ export const create = mutation({
     await assertTeamCanStoreBytes(ctx, project.teamId, args.fileSize ?? 0);
     const publicId = await generatePublicId(ctx);
 
+    const ct = (args.contentType ?? "").split(";")[0].trim().toLowerCase();
+    const mediaType = ct.startsWith("image/") ? "image" as const : "video" as const;
+
     const videoId = await ctx.db.insert("videos", {
       projectId: args.projectId,
       uploadedByClerkId: user.subject,
@@ -71,7 +74,8 @@ export const create = mutation({
       fileSize: args.fileSize,
       contentType: args.contentType,
       status: "uploading",
-      muxAssetStatus: "preparing",
+      mediaType,
+      muxAssetStatus: mediaType === "video" ? "preparing" : undefined,
       workflowStatus: "review",
       visibility: "public",
       publicId,
@@ -146,6 +150,7 @@ export const getByPublicId = query({
         muxPlaybackId: video.muxPlaybackId,
         contentType: video.contentType,
         s3Key: video.s3Key,
+        mediaType: video.mediaType ?? "video",
       },
     };
   },
@@ -193,8 +198,12 @@ export const getByShareGrant = query({
         muxPlaybackId: video.muxPlaybackId,
         contentType: video.contentType,
         s3Key: video.s3Key,
+        mediaType: video.mediaType ?? "video",
       },
       grantExpiresAt: resolved.grant.expiresAt,
+      shareLinkId: resolved.shareLink._id,
+      burnAfterReading: resolved.shareLink.burnAfterReading ?? false,
+      burnGraceMs: resolved.shareLink.burnGraceMs,
     };
   },
 });
@@ -359,6 +368,21 @@ export const markAsReady = internalMutation({
       thumbnailUrl: args.thumbnailUrl,
       uploadError: undefined,
       status: "ready",
+    });
+  },
+});
+
+export const markImageAsReady = internalMutation({
+  args: {
+    videoId: v.id("videos"),
+    thumbnailUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.videoId, {
+      status: "ready",
+      mediaType: "image",
+      thumbnailUrl: args.thumbnailUrl,
+      uploadError: undefined,
     });
   },
 });

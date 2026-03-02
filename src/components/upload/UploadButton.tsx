@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
+const ACCEPTED_MEDIA_TYPES = "video/*,image/*";
+
 interface UploadButtonProps {
   onFilesSelected: (files: File[]) => void;
   disabled?: boolean;
@@ -34,7 +36,7 @@ export function UploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept="video/*"
+        accept={ACCEPTED_MEDIA_TYPES}
         multiple
         onChange={handleChange}
         className="hidden"

@@ -11,6 +11,7 @@ import { triggerDownload } from "@/lib/download";
 import {
   ArrowLeft,
   Play,
+  ImageIcon,
   MoreVertical,
   Trash2,
   Link as LinkIcon,
@@ -182,7 +183,7 @@ export default function ProjectPage({
   );
 
   const handleDeleteVideo = async (videoId: Id<"videos">) => {
-    if (!confirm("Are you sure you want to delete this video?")) return;
+    if (!confirm("Are you sure you want to delete this?")) return;
     try {
       await deleteVideo({ videoId });
     } catch (error) {
@@ -253,7 +254,7 @@ export default function ProjectPage({
           "success",
           canSharePublicly
             ? "Share link copied"
-            : "Video link copied (public watch link not available yet)",
+            : "Link copied (public link not available yet)",
         );
       } catch {
         showShareToast("error", "Could not copy link");
@@ -337,6 +338,7 @@ export default function ProjectPage({
           )}>
             <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {videos?.map((video) => {
+                const isImage = (video as { mediaType?: string }).mediaType === "image";
                 const thumbnailSrc = video.thumbnailUrl?.startsWith("http")
                   ? video.thumbnailUrl
                   : undefined;
@@ -367,10 +369,10 @@ export default function ProjectPage({
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <Play className="h-10 w-10 text-[#888]" />
+                          {isImage ? <ImageIcon className="h-10 w-10 text-[#888]" /> : <Play className="h-10 w-10 text-[#888]" />}
                         </div>
                       )}
-                    {video.status === "ready" && video.duration && (
+                    {video.status === "ready" && !isImage && video.duration && (
                       <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] font-mono px-1.5 py-0.5">
                         {formatDuration(video.duration)}
                       </div>
@@ -480,6 +482,7 @@ export default function ProjectPage({
             isLoadingData ? "opacity-0" : "opacity-100"
           )}>
             {videos?.map((video) => {
+              const isImage = (video as { mediaType?: string }).mediaType === "image";
               const thumbnailSrc = video.thumbnailUrl?.startsWith("http")
                 ? video.thumbnailUrl
                 : undefined;
@@ -511,7 +514,7 @@ export default function ProjectPage({
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Play className="h-6 w-6 text-[#888]" />
+                        {isImage ? <ImageIcon className="h-6 w-6 text-[#888]" /> : <Play className="h-6 w-6 text-[#888]" />}
                       </div>
                     )}
                     {video.status !== "ready" && (
@@ -523,7 +526,7 @@ export default function ProjectPage({
                         </span>
                       </div>
                     )}
-                    {video.status === "ready" && video.duration && (
+                    {video.status === "ready" && !isImage && video.duration && (
                       <div className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-mono px-1 py-0.5">
                         {formatDuration(video.duration)}
                       </div>

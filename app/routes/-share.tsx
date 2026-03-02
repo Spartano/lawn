@@ -1,27 +1,24 @@
 import { useAction, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Link, useParams } from "@tanstack/react-router";
-import { useUser } from "@clerk/tanstack-react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { VideoPlayer, type VideoPlayerHandle } from "@/components/video-player/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { formatDuration, formatTimestamp, formatRelativeTime } from "@/lib/utils";
 import { useVideoPresence } from "@/lib/useVideoPresence";
 import { VideoWatchers } from "@/components/presence/VideoWatchers";
-import { Lock, Video, AlertCircle, MessageSquare, Clock } from "lucide-react";
+import { Lock, Video, AlertCircle } from "lucide-react";
 import { useShareData } from "./-share.data";
 
 export default function SharePage() {
   const params = useParams({ strict: false });
   const token = params.token as string;
-  const { user, isLoaded: isUserLoaded } = useUser();
 
   const issueAccessGrant = useMutation(api.shareLinks.issueAccessGrant);
-  const createComment = useMutation(api.comments.createForShareGrant);
   const getPlaybackSession = useAction(api.videoActions.getSharedPlaybackSession);
+  const burnLink = useMutation(api.shareLinks.burnShareLink);
 
   const [grantToken, setGrantToken] = useState<string | null>(null);
   const [hasAttemptedAutoGrant, setHasAttemptedAutoGrant] = useState(false);
@@ -31,13 +28,11 @@ export default function SharePage() {
   const [playbackSession, setPlaybackSession] = useState<{
     url: string;
     posterUrl: string;
+    mediaType?: string;
   } | null>(null);
   const [isLoadingPlayback, setIsLoadingPlayback] = useState(false);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [commentText, setCommentText] = useState("");
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [commentError, setCommentError] = useState<string | null>(null);
   const playerRef = useRef<VideoPlayerHandle | null>(null);
 
   const { shareInfo, videoData, comments } = useShareData({ token, grantToken });
@@ -116,6 +111,34 @@ export default function SharePage() {
     };
   }, [getPlaybackSession, grantToken]);
 
+  const burnedRef = useRef(false);
+  const isBurnOnTabClose = videoData?.burnAfterReading === true && videoData?.burnGraceMs === undefined;
+
+  useEffect(() => {
+    if (!grantToken || !isBurnOnTabClose || !playbackSession) return;
+
+    burnedRef.current = false;
+
+    const doBurn = () => {
+      if (burnedRef.current) return;
+      burnedRef.current = true;
+      void burnLink({ grantToken });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") doBurn();
+    };
+    const handleBeforeUnload = () => doBurn();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [grantToken, isBurnOnTabClose, playbackSession, burnLink]);
+
   const flattenedComments = useMemo(() => {
     if (!comments) return [] as Array<{ _id: string; timestampSeconds: number; resolved: boolean }>;
 
@@ -137,26 +160,6 @@ export default function SharePage() {
     return markers;
   }, [comments]);
 
-  const handleSubmitComment = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!grantToken || !commentText.trim() || isSubmittingComment) return;
-
-    setIsSubmittingComment(true);
-    setCommentError(null);
-    try {
-      await createComment({
-        grantToken,
-        text: commentText.trim(),
-        timestampSeconds: currentTime,
-      });
-      setCommentText("");
-    } catch {
-      setCommentError("Failed to post comment.");
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  };
-
   const isBootstrappingShare =
     shareInfo === undefined ||
     (shareInfo?.status === "ok" &&
@@ -166,12 +169,14 @@ export default function SharePage() {
   if (isBootstrappingShare) {
     return (
       <div className="min-h-screen bg-[#f0f0e8] flex items-center justify-center">
-        <div className="text-[#888]">Opening shared video...</div>
+        <div className="text-[#888]">Opening shared media...</div>
       </div>
     );
   }
 
-  if (shareInfo.status === "missing" || shareInfo.status === "expired") {
+  const alreadyViewing = Boolean(grantToken && playbackSession);
+
+  if ((shareInfo.status === "missing" || shareInfo.status === "expired") && !alreadyViewing) {
     return (
       <div className="min-h-screen bg-[#f0f0e8] flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -181,7 +186,7 @@ export default function SharePage() {
             </div>
             <CardTitle>Link expired or invalid</CardTitle>
             <CardDescription>
-              This share link is no longer valid. Please ask the video owner for a new link.
+              This share link is no longer valid. Please ask the owner for a new link.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -206,7 +211,7 @@ export default function SharePage() {
             </div>
             <CardTitle>Password required</CardTitle>
             <CardDescription>
-              This video is password protected. Enter the password to view.
+              This content is password protected. Enter the password to view.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -228,7 +233,7 @@ export default function SharePage() {
                 <p className="text-sm text-[#dc2626]">Incorrect password</p>
               )}
               <Button type="submit" className="w-full" disabled={!passwordInput || isRequestingGrant}>
-                {isRequestingGrant ? "Verifying..." : "View video"}
+                {isRequestingGrant ? "Verifying..." : "View"}
               </Button>
             </form>
           </CardContent>
@@ -245,9 +250,9 @@ export default function SharePage() {
             <div className="mx-auto w-12 h-12 bg-[#e8e8e0] flex items-center justify-center mb-4 border-2 border-[#1a1a1a]">
               <Video className="h-6 w-6 text-[#888]" />
             </div>
-            <CardTitle>Video not available</CardTitle>
+            <CardTitle>Not available</CardTitle>
             <CardDescription>
-              This video is not available or is still processing.
+              This content is not available or is still processing.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -256,6 +261,7 @@ export default function SharePage() {
   }
 
   const video = videoData.video;
+  const shareIsImage = playbackSession?.mediaType === "image";
 
   return (
     <div className="min-h-screen bg-[#f0f0e8]">
@@ -278,14 +284,22 @@ export default function SharePage() {
             <p className="text-[#888] mt-1">{video.description}</p>
           )}
           <div className="flex items-center gap-4 mt-2 text-sm text-[#888]">
-            {video.duration && <span className="font-mono">{formatDuration(video.duration)}</span>}
+            {!shareIsImage && video.duration && <span className="font-mono">{formatDuration(video.duration)}</span>}
             {comments && <span>{comments.length} threads</span>}
             <VideoWatchers watchers={watchers} className="ml-auto" />
           </div>
         </div>
 
         <div className="border-2 border-[#1a1a1a] overflow-hidden">
-          {playbackSession?.url ? (
+          {playbackSession?.mediaType === "image" && playbackSession?.url ? (
+            <div className="flex items-center justify-center bg-[#e8e8e0] p-4">
+              <img
+                src={playbackSession.url}
+                alt={video.title}
+                className="max-w-full max-h-[80vh] object-contain"
+              />
+            </div>
+          ) : playbackSession?.url ? (
             <VideoPlayer
               ref={playerRef}
               src={playbackSession.url}
@@ -314,59 +328,23 @@ export default function SharePage() {
           )}
         </div>
 
-        <section className="border-2 border-[#1a1a1a] bg-[#e8e8e0] p-4 space-y-4">
-          <div className="flex items-center justify-between">
+        {comments && comments.length > 0 && (
+          <section className="border-2 border-[#1a1a1a] bg-[#e8e8e0] p-4 space-y-4">
             <h2 className="font-black text-[#1a1a1a]">Comments</h2>
-            <span className="text-xs text-[#888] font-mono">{formatTimestamp(currentTime)}</span>
-          </div>
-
-          {isUserLoaded && user ? (
-            <form onSubmit={handleSubmitComment} className="space-y-2">
-              <div className="flex items-center gap-2 text-xs text-[#666]">
-                <Clock className="h-3.5 w-3.5" />
-                Comment at {formatTimestamp(currentTime)}
-              </div>
-              <Textarea
-                value={commentText}
-                onChange={(event) => setCommentText(event.target.value)}
-                placeholder="Leave a comment..."
-                className="min-h-[90px]"
-              />
-              {commentError ? <p className="text-xs text-[#dc2626]">{commentError}</p> : null}
-              <Button type="submit" disabled={!commentText.trim() || isSubmittingComment}>
-                <MessageSquare className="mr-1.5 h-4 w-4" />
-                {isSubmittingComment ? "Posting..." : "Post comment"}
-              </Button>
-            </form>
-          ) : (
-            <a
-              href={`/sign-in?redirect_url=${encodeURIComponent(`/share/${token}`)}`}
-              className="inline-flex"
-            >
-              <Button>
-                <MessageSquare className="mr-1.5 h-4 w-4" />
-                Sign in to comment
-              </Button>
-            </a>
-          )}
-
-          {comments === undefined ? (
-            <p className="text-sm text-[#888]">Loading comments...</p>
-          ) : comments.length === 0 ? (
-            <p className="text-sm text-[#888]">No comments yet.</p>
-          ) : (
             <div className="space-y-3">
               {comments.map((comment) => (
                 <article key={comment._id} className="border-2 border-[#1a1a1a] bg-[#f0f0e8] p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-bold text-[#1a1a1a]">{comment.userName}</div>
-                    <button
-                      type="button"
-                      className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
-                      onClick={() => playerRef.current?.seekTo(comment.timestampSeconds, { play: true })}
-                    >
-                      {formatTimestamp(comment.timestampSeconds)}
-                    </button>
+                    {!shareIsImage && (
+                      <button
+                        type="button"
+                        className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
+                        onClick={() => playerRef.current?.seekTo(comment.timestampSeconds, { play: true })}
+                      >
+                        {formatTimestamp(comment.timestampSeconds)}
+                      </button>
+                    )}
                   </div>
                   <p className="text-sm text-[#1a1a1a] mt-1 whitespace-pre-wrap">{comment.text}</p>
                   <p className="text-[11px] text-[#888] mt-1">{formatRelativeTime(comment._creationTime)}</p>
@@ -377,13 +355,15 @@ export default function SharePage() {
                         <div key={reply._id} className="text-sm">
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-bold text-[#1a1a1a]">{reply.userName}</span>
-                            <button
-                              type="button"
-                              className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
-                              onClick={() => playerRef.current?.seekTo(reply.timestampSeconds, { play: true })}
-                            >
-                              {formatTimestamp(reply.timestampSeconds)}
-                            </button>
+                            {!shareIsImage && (
+                              <button
+                                type="button"
+                                className="font-mono text-xs text-[#2d5a2d] hover:text-[#1a1a1a]"
+                                onClick={() => playerRef.current?.seekTo(reply.timestampSeconds, { play: true })}
+                              >
+                                {formatTimestamp(reply.timestampSeconds)}
+                              </button>
+                            )}
                           </div>
                           <p className="text-[#1a1a1a] whitespace-pre-wrap">{reply.text}</p>
                         </div>
@@ -393,8 +373,8 @@ export default function SharePage() {
                 </article>
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
       </main>
 
       <footer className="border-t-2 border-[#1a1a1a] px-6 py-4 mt-8">

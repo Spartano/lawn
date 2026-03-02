@@ -32,15 +32,15 @@ import { prewarmTeam } from "./-team.data";
 import { useVideoUploadManager } from "./-useVideoUploadManager";
 import { DashboardUploadProvider } from "@/lib/dashboardUploadContext";
 
-const VIDEO_FILE_EXTENSIONS = /\.(mp4|mov|m4v|webm|avi|mkv)$/i;
+const MEDIA_FILE_EXTENSIONS = /\.(mp4|mov|m4v|webm|avi|mkv|jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|heic|heif|avif)$/i;
 
-function isVideoFile(file: File) {
-  return file.type.startsWith("video/") || VIDEO_FILE_EXTENSIONS.test(file.name);
+function isMediaFile(file: File) {
+  return file.type.startsWith("video/") || file.type.startsWith("image/") || MEDIA_FILE_EXTENSIONS.test(file.name);
 }
 
-function getVideoFiles(files: FileList | null) {
+function getMediaFiles(files: FileList | null) {
   if (!files) return [];
-  return Array.from(files).filter(isVideoFile);
+  return Array.from(files).filter(isMediaFile);
 }
 
 function dragEventHasFiles(event: DragEvent) {
@@ -90,7 +90,7 @@ export default function DashboardLayout() {
 
   const requestUpload = useCallback(
     (inputFiles: File[], preferredProjectId?: Id<"projects">) => {
-      const files = inputFiles.filter(isVideoFile);
+      const files = inputFiles.filter(isMediaFile);
       if (files.length === 0) return;
 
       if (preferredProjectId) {
@@ -170,7 +170,7 @@ export default function DashboardLayout() {
       dragDepthRef.current = 0;
       setIsGlobalDragActive(false);
 
-      const files = getVideoFiles(event.dataTransfer?.files ?? null);
+      const files = getMediaFiles(event.dataTransfer?.files ?? null);
       if (files.length === 0) return;
       requestUpload(files);
     };
@@ -249,7 +249,7 @@ export default function DashboardLayout() {
           <div className="absolute inset-0 bg-[#1a1a1a]/20" />
           <div className="absolute inset-4 border-4 border-dashed border-[#2d5a2d] bg-[#2d5a2d]/10 flex items-center justify-center">
             <p className="border-2 border-[#1a1a1a] bg-[#f0f0e8] px-4 py-2 text-sm font-bold text-[#1a1a1a]">
-              Drop videos to upload
+              Drop to upload
             </p>
           </div>
         </div>
@@ -278,7 +278,7 @@ export default function DashboardLayout() {
           <DialogHeader>
             <DialogTitle>Choose a project</DialogTitle>
             <DialogDescription>
-              {pendingFiles?.length ? `Upload ${pendingFiles.length} video${pendingFiles.length > 1 ? "s" : ""} to:` : "Pick a project to start uploading."}
+              {pendingFiles?.length ? `Upload ${pendingFiles.length} file${pendingFiles.length > 1 ? "s" : ""} to:` : "Pick a project to start uploading."}
             </DialogDescription>
           </DialogHeader>
           {uploadTargets === undefined ? (

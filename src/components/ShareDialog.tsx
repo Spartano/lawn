@@ -24,6 +24,10 @@ import {
   Lock,
   ExternalLink,
   Globe,
+  Flame,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +36,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatRelativeTime } from "@/lib/utils";
+
+function formatGracePeriod(ms: number | undefined): string {
+  if (ms === undefined) return "tab close";
+  if (ms <= 60_000) return "1 min";
+  if (ms <= 30 * 60_000) return "30 min";
+  if (ms <= 60 * 60_000) return "1 hr";
+  if (ms <= 24 * 60 * 60_000) return "1 day";
+  return "7 days";
+}
 
 interface ShareDialogProps {
   videoId: Id<"videos">;
@@ -49,9 +62,12 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const [newLinkOptions, setNewLinkOptions] = useState({
     expiresInDays: undefined as number | undefined,
     password: undefined as string | undefined,
+    burnAfterReading: false,
+    burnGraceMs: undefined as number | undefined,
   });
 
   const handleCreateLink = async () => {
@@ -62,10 +78,14 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
         expiresInDays: newLinkOptions.expiresInDays,
         allowDownload: false,
         password: newLinkOptions.password,
+        burnAfterReading: newLinkOptions.burnAfterReading || undefined,
+        burnGraceMs: newLinkOptions.burnAfterReading ? newLinkOptions.burnGraceMs : undefined,
       });
       setNewLinkOptions({
         expiresInDays: undefined,
         password: undefined,
+        burnAfterReading: false,
+        burnGraceMs: undefined,
       });
     } catch (error) {
       console.error("Failed to create share link:", error);
@@ -116,22 +136,22 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Share video</DialogTitle>
+          <DialogTitle>Share</DialogTitle>
           <DialogDescription>
-            Public videos can be viewed by anyone with the URL. Only signed-in users can comment.
+            Choose how others can access this content. Signed-in users can leave comments.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 border-2 border-[#1a1a1a] p-4 bg-[#e8e8e0] overflow-hidden">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-sm text-[#1a1a1a]">Visibility</h3>
+              <h3 className="font-bold text-sm text-[#1a1a1a]">Open link</h3>
               <p className="text-xs text-[#666]">
-                Private disables the public URL. Restricted share links can still be used.
+                A permanent URL anyone can view — no password, no expiration.
               </p>
             </div>
             <Badge variant={video?.visibility === "public" ? "success" : "secondary"}>
-              {video?.visibility === "public" ? "Public" : "Private"}
+              {video?.visibility === "public" ? "On" : "Off"}
             </Badge>
           </div>
 
@@ -142,7 +162,7 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
               onClick={() => void handleSetVisibility("public")}
             >
               <Globe className="mr-2 h-4 w-4" />
-              Public
+              Enable
             </Button>
             <Button
               variant={video?.visibility === "private" ? "default" : "outline"}
@@ -150,13 +170,12 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
               onClick={() => void handleSetVisibility("private")}
             >
               <Lock className="mr-2 h-4 w-4" />
-              Private
+              Disable
             </Button>
           </div>
 
           {publicWatchPath ? (
             <div className="p-3 border-2 border-[#1a1a1a] bg-[#f0f0e8] space-y-2 overflow-hidden">
-              <div className="text-xs text-[#666]">Public URL</div>
               <code className="block text-sm bg-[#e8e8e0] px-2 py-1 font-mono truncate min-w-0">
                 {publicWatchPath}
               </code>
@@ -167,7 +186,7 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
                   disabled={video?.visibility !== "public"}
                 >
                   {copiedId === "public" ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                  Copy URL
+                  Copy
                 </Button>
                 <Button
                   variant="outline"
@@ -183,7 +202,10 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
         </div>
 
         <div className="space-y-4 border-2 border-[#1a1a1a] p-4 bg-[#e8e8e0]">
-          <h3 className="font-bold text-sm text-[#1a1a1a]">Create restricted share link</h3>
+          <h3 className="font-bold text-sm text-[#1a1a1a]">Private link</h3>
+          <p className="text-xs text-[#666] -mt-2">
+            Generate a unique link with password, expiration, or burn-after-reading controls.
+          </p>
 
           <div>
             <label className="text-sm text-[#888]">Expiration</label>
@@ -244,16 +266,85 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
             />
           </div>
 
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newLinkOptions.burnAfterReading}
+              onChange={(e) =>
+                setNewLinkOptions((o) => ({
+                  ...o,
+                  burnAfterReading: e.target.checked,
+                  burnGraceMs: e.target.checked ? o.burnGraceMs : undefined,
+                }))
+              }
+              className="h-4 w-4 border-2 border-[#1a1a1a] accent-[#2d5a2d]"
+            />
+            <div>
+              <span className="text-sm font-bold text-[#1a1a1a]">Burn after reading</span>
+              <p className="text-xs text-[#888]">Link expires after the viewer leaves or the grace period ends</p>
+            </div>
+          </label>
+
+          {newLinkOptions.burnAfterReading && (
+            <div>
+              <label className="text-sm text-[#888]">Burn grace period</label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between mt-1">
+                    {newLinkOptions.burnGraceMs === undefined
+                      ? "On tab close only"
+                      : newLinkOptions.burnGraceMs === 60_000
+                        ? "1 minute"
+                        : newLinkOptions.burnGraceMs === 30 * 60_000
+                          ? "30 minutes"
+                          : newLinkOptions.burnGraceMs === 60 * 60_000
+                            ? "1 hour"
+                            : newLinkOptions.burnGraceMs === 24 * 60 * 60_000
+                              ? "1 day"
+                              : newLinkOptions.burnGraceMs === 7 * 24 * 60 * 60_000
+                                ? "7 days"
+                                : "On tab close only"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setNewLinkOptions((o) => ({ ...o, burnGraceMs: undefined }))}>
+                    On tab close only
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewLinkOptions((o) => ({ ...o, burnGraceMs: 60_000 }))}>
+                    1 minute
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewLinkOptions((o) => ({ ...o, burnGraceMs: 30 * 60_000 }))}>
+                    30 minutes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewLinkOptions((o) => ({ ...o, burnGraceMs: 60 * 60_000 }))}>
+                    1 hour
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewLinkOptions((o) => ({ ...o, burnGraceMs: 24 * 60 * 60_000 }))}>
+                    1 day
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewLinkOptions((o) => ({ ...o, burnGraceMs: 7 * 24 * 60 * 60_000 }))}>
+                    7 days
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-[#888] mt-1">
+                {newLinkOptions.burnGraceMs === undefined
+                  ? "Link will burn when the viewer closes or leaves the tab."
+                  : "Link will expire this long after it is first opened."}
+              </p>
+            </div>
+          )}
+
           <Button onClick={handleCreateLink} disabled={isCreating} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            {isCreating ? "Creating..." : "Create restricted link"}
+            {isCreating ? "Creating..." : "Create private link"}
           </Button>
         </div>
 
         <Separator />
 
         <div className="space-y-2">
-          <h3 className="font-bold text-sm text-[#1a1a1a]">Restricted links</h3>
+          <h3 className="font-bold text-sm text-[#1a1a1a]">Private links</h3>
           {shareLinks === undefined ? (
             <p className="text-sm text-[#888]">Loading...</p>
           ) : shareLinks.length === 0 ? (
@@ -265,68 +356,133 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
                   key={link._id}
                   className="p-3 border-2 border-[#1a1a1a] space-y-2"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <code className="text-sm bg-[#e8e8e0] px-2 py-0.5 font-mono truncate block min-w-0">
-                          /share/{link.token}
-                        </code>
-                        {link.isExpired ? (
-                          <Badge variant="destructive" className="flex-shrink-0">Expired</Badge>
-                        ) : null}
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm bg-[#e8e8e0] px-2 py-0.5 font-mono break-all">
+                      /share/{link.token}
+                    </code>
+                    {link.isExpired ? (
+                      <Badge variant="destructive" className="flex-shrink-0">Expired</Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#888]">
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {link.viewCount} views
+                      </span>
+                      {link.hasPassword ? (
+                        <span className="flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          Protected
+                        </span>
+                      ) : null}
+                      {link.burnAfterReading ? (
+                        <span className="flex items-center gap-1 text-[#dc2626]">
+                          <Flame className="h-3 w-3" />
+                          {link.firstViewedAt ? "Burned" : `Burns after ${formatGracePeriod(link.burnGraceMs)}`}
+                        </span>
+                      ) : null}
+                      {link.expiresAt ? (
+                        <span>
+                          Expires {formatRelativeTime(link.expiresAt)}
+                        </span>
+                      ) : null}
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-0 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-7 w-7"
                         onClick={() => handleCopyLink(link.token)}
                       >
                         {copiedId === link.token ? (
-                          <Check className="h-4 w-4 text-[#2d5a2d]" />
+                          <Check className="h-3.5 w-3.5 text-[#2d5a2d]" />
                         ) : (
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3.5 w-3.5" />
                         )}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-7 w-7"
                         onClick={() => window.open(`/share/${link.token}`, "_blank")}
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-[#dc2626] hover:text-[#dc2626]"
+                        className="h-7 w-7 text-[#dc2626] hover:text-[#dc2626]"
                         onClick={() => handleDeleteLink(link._id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#888]">
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {link.viewCount} views
-                    </span>
-                    {link.hasPassword ? (
-                      <span className="flex items-center gap-1">
-                        <Lock className="h-3 w-3" />
-                        Protected
-                      </span>
-                    ) : null}
-                    {link.expiresAt ? (
-                      <span>
-                        Expires {formatRelativeTime(link.expiresAt)}
-                      </span>
-                    ) : null}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+        <Separator />
+
+        <button
+          type="button"
+          onClick={() => setShowHelp((v) => !v)}
+          className="flex items-center justify-between w-full text-sm font-bold text-[#1a1a1a] hover:text-[#2d5a2d] transition-colors py-1"
+        >
+          <span className="flex items-center gap-2">
+            <HelpCircle className="h-4 w-4" />
+            How sharing works
+          </span>
+          {showHelp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+
+        {showHelp && (
+          <div className="space-y-4 border-2 border-[#1a1a1a] p-4 bg-[#e8e8e0] text-sm">
+            <div>
+              <h4 className="font-bold text-[#1a1a1a]">Open link</h4>
+              <p className="text-[#666] mt-1">
+                A permanent URL that works for anyone — no login, no password, no expiration. Enable it to let anyone with the link view the content. Disable it to turn off public access. Private links still work either way.
+              </p>
+            </div>
+
+            <div className="border-t border-[#1a1a1a]/10 pt-3">
+              <h4 className="font-bold text-[#1a1a1a]">Private links</h4>
+              <p className="text-[#666] mt-1">
+                Unique links you generate for specific people. Each one can have its own password, expiration, and burn settings. You can track views, revoke access anytime, and create as many as you need.
+              </p>
+            </div>
+
+            <div className="border-t border-[#1a1a1a]/10 pt-3">
+              <h4 className="font-bold text-[#1a1a1a]">Password</h4>
+              <p className="text-[#666] mt-1">
+                Require a password before the recipient can view. After 5 wrong attempts, the link locks for 10 minutes.
+              </p>
+            </div>
+
+            <div className="border-t border-[#1a1a1a]/10 pt-3">
+              <h4 className="font-bold text-[#1a1a1a]">Expiration</h4>
+              <p className="text-[#666] mt-1">
+                Set the link to stop working after 1, 7, or 30 days from creation. After that, the link is permanently dead.
+              </p>
+            </div>
+
+            <div className="border-t border-[#1a1a1a]/10 pt-3">
+              <h4 className="font-bold text-[#1a1a1a]">Burn after reading</h4>
+              <p className="text-[#666] mt-1">
+                The link self-destructs after being opened. Set a grace period (e.g. 1 minute, 1 hour) — the countdown starts the moment someone opens the link, and it expires when the time is up. Choose "On tab close only" to keep it alive until the viewer leaves.
+              </p>
+            </div>
+
+            <div className="border-t border-[#1a1a1a]/10 pt-3">
+              <h4 className="font-bold text-[#1a1a1a]">Comments</h4>
+              <p className="text-[#666] mt-1">
+                Signed-in users can leave comments on any shared content — open or private links. Video comments are pinned to a point in the timeline. Image comments are general.
+              </p>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

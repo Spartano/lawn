@@ -53,11 +53,12 @@ export function useVideoUploadManager() {
         let createdVideoId: Id<"videos"> | undefined;
 
         try {
+          const contentType = file.type || "video/mp4";
           createdVideoId = await createVideo({
             projectId,
             title,
             fileSize: file.size,
-            contentType: file.type || "video/mp4",
+            contentType,
           });
 
           setUploads((prev) =>
@@ -72,7 +73,7 @@ export function useVideoUploadManager() {
             videoId: createdVideoId,
             filename: file.name,
             fileSize: file.size,
-            contentType: file.type || "video/mp4",
+            contentType,
           });
 
           await new Promise<void>((resolve, reject) => {
@@ -140,7 +141,7 @@ export function useVideoUploadManager() {
             });
 
             xhr.open("PUT", url);
-            xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+            xhr.setRequestHeader("Content-Type", contentType);
             xhr.send(file);
           });
 
