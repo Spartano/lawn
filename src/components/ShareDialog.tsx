@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -63,12 +63,23 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [now, setNow] = useState(Date.now);
   const [newLinkOptions, setNewLinkOptions] = useState({
     expiresInDays: undefined as number | undefined,
     password: undefined as string | undefined,
     burnAfterReading: false,
     burnGraceMs: undefined as number | undefined,
   });
+
+  const hasActiveBurnTimer = shareLinks?.some(
+    (l) => l.burnAfterReading && l.firstViewedAt && l.burnGraceMs !== undefined && !l.isExpired,
+  );
+
+  useEffect(() => {
+    if (!hasActiveBurnTimer) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [hasActiveBurnTimer]);
 
   const handleCreateLink = async () => {
     setIsCreating(true);
@@ -351,7 +362,30 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
             <p className="text-sm text-[#888]">No share links yet</p>
           ) : (
             <div className="space-y-2">
-              {shareLinks.map((link) => (
+              {shareLinks.map((link) => {
+                let burnExpired = link.isExpired;
+                let burnLabel = "";
+                if (link.burnAfterReading) {
+                  if (link.firstViewedAt && link.burnGraceMs !== undefined) {
+                    const expiresAt = link.firstViewedAt + link.burnGraceMs;
+                    burnExpired = burnExpired || expiresAt <= now;
+                    if (expiresAt <= now) {
+                      burnLabel = "Burned";
+                    } else {
+                      const secsLeft = Math.max(0, Math.ceil((expiresAt - now) / 1000));
+                      const m = Math.floor(secsLeft / 60);
+                      const s = secsLeft % 60;
+                      burnLabel = `Burns in ${m}:${String(s).padStart(2, "0")}`;
+                    }
+                  } else if (link.firstViewedAt) {
+                    burnLabel = "Burned";
+                  } else {
+                    burnLabel = `Burns after ${formatGracePeriod(link.burnGraceMs)}`;
+                  }
+                }
+                const isExpired = burnExpired;
+
+                return (
                 <div
                   key={link._id}
                   className="p-3 border-2 border-[#1a1a1a] space-y-2"
@@ -360,7 +394,7 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
                     <code className="text-sm bg-[#e8e8e0] px-2 py-0.5 font-mono break-all">
                       /share/{link.token}
                     </code>
-                    {link.isExpired ? (
+                    {isExpired ? (
                       <Badge variant="destructive" className="flex-shrink-0">Expired</Badge>
                     ) : null}
                   </div>
@@ -379,7 +413,7 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
                       {link.burnAfterReading ? (
                         <span className="flex items-center gap-1 text-[#dc2626]">
                           <Flame className="h-3 w-3" />
-                          {link.firstViewedAt ? "Burned" : `Burns after ${formatGracePeriod(link.burnGraceMs)}`}
+                          {burnLabel}
                         </span>
                       ) : null}
                       {link.expiresAt ? (
@@ -420,7 +454,8 @@ export function ShareDialog({ videoId, open, onOpenChange }: ShareDialogProps) {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

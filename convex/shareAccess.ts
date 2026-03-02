@@ -73,7 +73,9 @@ export async function resolveActiveShareGrant(
     .withIndex("by_token", (q) => q.eq("token", grantToken))
     .unique();
 
-  if (!grant || grant.expiresAt <= Date.now()) {
+  const now = Date.now();
+
+  if (!grant || grant.expiresAt <= now) {
     return null;
   }
 
@@ -82,8 +84,18 @@ export async function resolveActiveShareGrant(
     return null;
   }
 
-  if (shareLink.expiresAt && shareLink.expiresAt <= Date.now()) {
+  if (shareLink.expiresAt && shareLink.expiresAt <= now) {
     return null;
+  }
+
+  if (shareLink.burnAfterReading && shareLink.firstViewedAt) {
+    if (shareLink.burnGraceMs !== undefined) {
+      if (shareLink.firstViewedAt + shareLink.burnGraceMs <= now) {
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
 
   return { grant, shareLink };

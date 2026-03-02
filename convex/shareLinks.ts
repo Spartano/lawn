@@ -242,13 +242,15 @@ export const getByToken = query({
       return { status: "missing" as const };
     }
 
-    if (link.expiresAt && link.expiresAt < Date.now()) {
+    const now = Date.now();
+
+    if (link.expiresAt && link.expiresAt < now) {
       return { status: "expired" as const };
     }
 
     if (link.burnAfterReading && link.firstViewedAt) {
       if (link.burnGraceMs !== undefined) {
-        if (link.firstViewedAt + link.burnGraceMs < Date.now()) {
+        if (link.firstViewedAt + link.burnGraceMs < now) {
           return { status: "expired" as const };
         }
       } else {
@@ -393,8 +395,15 @@ export const burnShareLink = mutation({
     if (!resolved) return;
 
     const { shareLink } = resolved;
-    if (!shareLink.burnAfterReading || shareLink.firstViewedAt) return;
+    if (!shareLink.burnAfterReading) return;
 
-    await ctx.db.patch(shareLink._id, { firstViewedAt: Date.now() });
+    if (!shareLink.firstViewedAt) {
+      await ctx.db.patch(shareLink._id, { firstViewedAt: Date.now() });
+      return;
+    }
+
+    if (shareLink.burnGraceMs !== undefined && shareLink.burnGraceMs > 0) {
+      await ctx.db.patch(shareLink._id, { burnGraceMs: 0 });
+    }
   },
 });

@@ -204,6 +204,7 @@ export const getByShareGrant = query({
       shareLinkId: resolved.shareLink._id,
       burnAfterReading: resolved.shareLink.burnAfterReading ?? false,
       burnGraceMs: resolved.shareLink.burnGraceMs,
+      firstViewedAt: resolved.shareLink.firstViewedAt,
     };
   },
 });

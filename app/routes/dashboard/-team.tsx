@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Folder, Plus, MoreVertical, Trash2, Users, ArrowRight, CreditCard, ClipboardList } from "lucide-react";
+import { Folder, Plus, MoreVertical, Trash2, Users, ArrowRight, CreditCard } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MemberInvite } from "@/components/teams/MemberInvite";
 import { cn } from "@/lib/utils";
-import { intakePath, projectPath, teamSettingsPath } from "@/lib/routes";
+import { projectPath, teamSettingsPath } from "@/lib/routes";
 import { Id } from "@convex/_generated/dataModel";
 import { useRoutePrewarmIntent } from "@/lib/useRoutePrewarmIntent";
 import { prewarmProject } from "./-project.data";
@@ -193,15 +193,6 @@ export default function TeamPage() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <DashboardHeader paths={[{ label: team?.slug ?? "team" }]}>
-        {team && (
-          <Button
-            variant="outline"
-            onClick={() => navigate({ to: intakePath(team.slug) })}
-          >
-            <ClipboardList className="sm:mr-1.5 h-4 w-4" />
-            <span className="hidden sm:inline">Intake</span>
-          </Button>
-        )}
         {canAccessBilling && team && (
           <Button
             variant="outline"

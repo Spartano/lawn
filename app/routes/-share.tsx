@@ -9,8 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { formatDuration, formatTimestamp, formatRelativeTime } from "@/lib/utils";
 import { useVideoPresence } from "@/lib/useVideoPresence";
 import { VideoWatchers } from "@/components/presence/VideoWatchers";
-import { Lock, Video, AlertCircle } from "lucide-react";
+import { Lock, Video, AlertCircle, Flame } from "lucide-react";
 import { useShareData } from "./-share.data";
+
+function formatBurnCountdown(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
 
 export default function SharePage() {
   const params = useParams({ strict: false });
@@ -36,6 +47,14 @@ export default function SharePage() {
   const playerRef = useRef<VideoPlayerHandle | null>(null);
 
   const { shareInfo, videoData, comments } = useShareData({ token, grantToken });
+
+  useEffect(() => {
+    if (shareInfo?.status === "expired" || shareInfo?.status === "missing") {
+      setGrantToken(null);
+      setPlaybackSession(null);
+    }
+  }, [shareInfo?.status]);
+
   const canTrackPresence = Boolean(playbackSession?.url && videoData?.video?._id);
   const { watchers } = useVideoPresence({
     videoId: videoData?.video?._id,
@@ -46,6 +65,7 @@ export default function SharePage() {
   useEffect(() => {
     setGrantToken(null);
     setHasAttemptedAutoGrant(false);
+    setBurnedOut(false);
   }, [token]);
 
   const acquireGrant = useCallback(
@@ -112,10 +132,39 @@ export default function SharePage() {
   }, [getPlaybackSession, grantToken]);
 
   const burnedRef = useRef(false);
-  const isBurnOnTabClose = videoData?.burnAfterReading === true && videoData?.burnGraceMs === undefined;
+  const isTabCloseBurn = videoData?.burnAfterReading === true && videoData?.burnGraceMs === undefined;
+  const isTimedBurn = videoData?.burnAfterReading === true && videoData?.burnGraceMs !== undefined && videoData?.firstViewedAt !== undefined;
+
+  const burnExpiresAt = isTimedBurn
+    ? (videoData.firstViewedAt as number) + (videoData.burnGraceMs as number)
+    : null;
+
+  const [burnSecondsLeft, setBurnSecondsLeft] = useState<number | null>(null);
+  const [burnedOut, setBurnedOut] = useState(false);
 
   useEffect(() => {
-    if (!grantToken || !isBurnOnTabClose || !playbackSession) return;
+    if (!burnExpiresAt) {
+      setBurnSecondsLeft(null);
+      return;
+    }
+
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((burnExpiresAt - Date.now()) / 1000));
+      setBurnSecondsLeft(left);
+      if (left <= 0) {
+        setBurnedOut(true);
+        setGrantToken(null);
+        setPlaybackSession(null);
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [burnExpiresAt]);
+
+  useEffect(() => {
+    if (!grantToken || !isTabCloseBurn || !playbackSession) return;
 
     burnedRef.current = false;
 
@@ -137,7 +186,7 @@ export default function SharePage() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [grantToken, isBurnOnTabClose, playbackSession, burnLink]);
+  }, [grantToken, isTabCloseBurn, playbackSession, burnLink]);
 
   const flattenedComments = useMemo(() => {
     if (!comments) return [] as Array<{ _id: string; timestampSeconds: number; resolved: boolean }>;
@@ -174,9 +223,7 @@ export default function SharePage() {
     );
   }
 
-  const alreadyViewing = Boolean(grantToken && playbackSession);
-
-  if ((shareInfo.status === "missing" || shareInfo.status === "expired") && !alreadyViewing) {
+  if (shareInfo.status === "missing" || shareInfo.status === "expired" || burnedOut) {
     return (
       <div className="min-h-screen bg-[#f0f0e8] flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -289,6 +336,39 @@ export default function SharePage() {
             <VideoWatchers watchers={watchers} className="ml-auto" />
           </div>
         </div>
+
+        {isTimedBurn && burnSecondsLeft !== null && (
+          <div className="border-2 border-[#1a1a1a] bg-[#1a1a1a] p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[#f0f0e8]">
+                <Flame className="h-4 w-4 text-[#dc2626]" />
+                <span className="text-sm font-bold">
+                  {burnSecondsLeft > 0 ? "Burns in" : "Burned"}
+                </span>
+              </div>
+              <span className="font-mono text-sm font-black text-[#f0f0e8]">
+                {burnSecondsLeft > 0 ? formatBurnCountdown(burnSecondsLeft) : "0:00"}
+              </span>
+            </div>
+            <div className="mt-2 h-1 bg-[#333] overflow-hidden">
+              <div
+                className="h-full bg-[#dc2626] transition-all duration-1000 ease-linear"
+                style={{
+                  width: `${burnExpiresAt && videoData?.burnGraceMs ? Math.max(0, (burnSecondsLeft / (videoData.burnGraceMs / 1000)) * 100) : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {isTabCloseBurn && playbackSession && (
+          <div className="border-2 border-[#1a1a1a] bg-[#1a1a1a] p-3">
+            <div className="flex items-center gap-2 text-[#f0f0e8]">
+              <Flame className="h-4 w-4 text-[#dc2626]" />
+              <span className="text-sm font-bold">Burns when you leave this tab</span>
+            </div>
+          </div>
+        )}
 
         <div className="border-2 border-[#1a1a1a] overflow-hidden">
           {playbackSession?.mediaType === "image" && playbackSession?.url ? (

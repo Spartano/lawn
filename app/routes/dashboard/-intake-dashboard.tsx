@@ -21,6 +21,9 @@ import {
   ExternalLink,
   MessageSquare,
   ArrowLeft,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Id } from "@convex/_generated/dataModel";
 import { cn, formatRelativeTime } from "@/lib/utils";
@@ -170,6 +173,8 @@ function FormList({
   onDelete: (formId: Id<"intakeForms">) => void;
   copiedSlug: string | null;
 }) {
+  const [showHelp, setShowHelp] = useState(false);
+
   if (forms === undefined) {
     return <p className="text-[#888] text-sm">Loading forms...</p>;
   }
@@ -187,6 +192,71 @@ function FormList({
 
   return (
     <div className="space-y-3">
+      <button
+        type="button"
+        onClick={() => setShowHelp((v) => !v)}
+        className="flex items-center justify-between w-full text-sm font-bold text-[#1a1a1a] hover:text-[#2d5a2d] transition-colors py-1"
+      >
+        <span className="flex items-center gap-2">
+          <HelpCircle className="h-4 w-4" />
+          How intake forms work
+        </span>
+        {showHelp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </button>
+
+      {showHelp && (
+        <div className="space-y-4 border-2 border-[#1a1a1a] p-4 bg-[#e8e8e0] text-sm">
+          <div>
+            <h4 className="font-bold text-[#1a1a1a]">Overview</h4>
+            <p className="text-[#666] mt-1">
+              Intake forms let you qualify potential clients with AI before giving them access to your content. You create a form, share the public link, and the AI handles the conversation — approving or rejecting based on criteria you define.
+            </p>
+          </div>
+
+          <div className="border-t border-[#1a1a1a]/10 pt-3">
+            <h4 className="font-bold text-[#1a1a1a]">1. Create a form</h4>
+            <p className="text-[#666] mt-1">
+              Give it a name, a URL slug, and write AI qualification instructions — the criteria the AI uses to decide who gets in (budget, timeline, project type, etc.). The AI never reveals these criteria to the client.
+            </p>
+          </div>
+
+          <div className="border-t border-[#1a1a1a]/10 pt-3">
+            <h4 className="font-bold text-[#1a1a1a]">2. Custom fields</h4>
+            <p className="text-[#666] mt-1">
+              Optionally add fields (text, number, dropdown) that clients fill out before the chat begins. Name and email are always collected.
+            </p>
+          </div>
+
+          <div className="border-t border-[#1a1a1a]/10 pt-3">
+            <h4 className="font-bold text-[#1a1a1a]">3. Share the link</h4>
+            <p className="text-[#666] mt-1">
+              Each form gets a public URL at <code className="bg-[#f0f0e8] px-1 font-mono text-xs">/intake/your-slug</code>. Send it to anyone — no login required. Toggle the form inactive to stop accepting new submissions.
+            </p>
+          </div>
+
+          <div className="border-t border-[#1a1a1a]/10 pt-3">
+            <h4 className="font-bold text-[#1a1a1a]">4. AI chat & qualification</h4>
+            <p className="text-[#666] mt-1">
+              The client fills out the form, then enters a live chat with the AI. The AI asks questions based on your instructions and eventually marks the client as qualified or rejected. You can review every transcript afterward.
+            </p>
+          </div>
+
+          <div className="border-t border-[#1a1a1a]/10 pt-3">
+            <h4 className="font-bold text-[#1a1a1a]">5. Auto-send media (optional)</h4>
+            <p className="text-[#666] mt-1">
+              If you attach a media ID to the form, qualified clients automatically receive a burn-after-reading share link to that content. Rejected clients see nothing.
+            </p>
+          </div>
+
+          <div className="border-t border-[#1a1a1a]/10 pt-3">
+            <h4 className="font-bold text-[#1a1a1a]">Submissions</h4>
+            <p className="text-[#666] mt-1">
+              Click the chat icon on any form to see all submissions — who applied, their status, the AI's decision, and the full chat transcript. If a share link was sent, you'll see that too.
+            </p>
+          </div>
+        </div>
+      )}
+
       {forms.map((form) => (
         <div
           key={form._id}
