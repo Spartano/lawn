@@ -10,6 +10,7 @@ export const Route = createFileRoute("/sign-up")({
       description:
         "Sign up for Signum — video review for coaching teams. $5/month flat, unlimited seats.",
       path: "/sign-up",
+      ogImage: "/og/default.png",
     }),
   validateSearch: (search: Record<string, unknown>) => ({
     redirect_url:

@@ -8,6 +8,7 @@ export const Route = createFileRoute("/share/$token")({
       title: "Shared media",
       description: "Review this shared content on Signum.",
       path: "/share",
+      ogImage: "/og/default.png",
       noIndex: true,
     }),
   component: SharePage,

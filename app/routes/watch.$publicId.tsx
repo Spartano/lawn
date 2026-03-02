@@ -8,6 +8,7 @@ export const Route = createFileRoute("/watch/$publicId")({
       title: "Watch",
       description: "Watch and review on Signum.",
       path: `/watch/${params.publicId}`,
+      ogImage: "/og/default.png",
     }),
   component: WatchPage,
 });
