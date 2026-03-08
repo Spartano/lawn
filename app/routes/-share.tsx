@@ -387,6 +387,7 @@ export default function SharePage() {
               comments={flattenedComments}
               onTimeUpdate={setCurrentTime}
               allowDownload={false}
+              muxPlaybackId={video.muxPlaybackId}
             />
           ) : (
             <div className="relative aspect-video overflow-hidden rounded-xl border border-zinc-800/80 bg-black shadow-[0_10px_40px_rgba(0,0,0,0.45)]">

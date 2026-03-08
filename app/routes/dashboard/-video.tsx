@@ -424,6 +424,7 @@ export default function VideoPage() {
                   setPreferredSource(id);
                 }
               }}
+              muxPlaybackId={video.muxPlaybackId}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center">

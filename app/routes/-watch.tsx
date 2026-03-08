@@ -200,6 +200,7 @@ export default function WatchPage() {
               onTimeUpdate={setCurrentTime}
               allowDownload={false}
               controlsBelow
+              muxPlaybackId={video.muxPlaybackId}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center">

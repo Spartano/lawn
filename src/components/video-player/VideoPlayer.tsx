@@ -16,9 +16,11 @@ import {
   Settings2,
   Check,
   ChevronDown,
+  Film,
 } from "lucide-react";
 import { cn, formatDuration, formatTimestamp } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download";
+import { FrameStrip, FRAME_INTERVALS, type FrameInterval } from "./FrameStrip";
 
 interface Comment {
   _id: string;
@@ -52,6 +54,8 @@ interface VideoPlayerProps {
   onSelectQuality?: (id: string) => void;
   /** Render controls below the video frame instead of overlaid. Ideal for mobile. */
   controlsBelow?: boolean;
+  /** Mux playback ID used to generate frame strip thumbnails. */
+  muxPlaybackId?: string;
 }
 
 export interface VideoPlayerHandle {
@@ -92,6 +96,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     selectedQualityId,
     onSelectQuality,
     controlsBelow = false,
+    muxPlaybackId,
   },
   ref
 ) {
@@ -123,6 +128,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   const [qualityOptions, setQualityOptions] = useState<QualityLevelOption[]>([]);
   const [selectedQualityLevel, setSelectedQualityLevel] = useState<number>(AUTO_QUALITY_LEVEL);
+  const [frameInterval, setFrameInterval] = useState<FrameInterval>(2);
+  const [frameStripMenuOpen, setFrameStripMenuOpen] = useState(false);
 
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const wasPlayingBeforeScrubRef = useRef(false);
@@ -701,6 +708,19 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     };
   }, [qualityMenuOpen]);
 
+  useEffect(() => {
+    if (!frameStripMenuOpen) return;
+
+    const handleClose = () => setFrameStripMenuOpen(false);
+    window.addEventListener("click", handleClose);
+    window.addEventListener("blur", handleClose);
+
+    return () => {
+      window.removeEventListener("click", handleClose);
+      window.removeEventListener("blur", handleClose);
+    };
+  }, [frameStripMenuOpen]);
+
   const displayTime = isScrubbing ? scrubTime : currentTime;
   const playedPercent = duration > 0 ? clamp(displayTime / duration, 0, 1) : 0;
   const canDownload = allowDownload && (Boolean(downloadUrl) || Boolean(onRequestDownload));
@@ -774,6 +794,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         />
       </div>
 
+      {/* Frame strip */}
+      {muxPlaybackId && duration > 0 && (
+        <FrameStrip
+          muxPlaybackId={muxPlaybackId}
+          duration={duration}
+          currentTime={displayTime}
+          interval={frameInterval}
+          onSeek={applyTime}
+        />
+      )}
+
       {/* Control row */}
       <div className="flex flex-wrap items-center gap-2 text-white" translate="no">
         <button
@@ -813,6 +844,45 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          {muxPlaybackId && (
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); showControls(); setFrameStripMenuOpen((c) => !c); setSeekStepMenuOpen(false); setSpeedMenuOpen(false); setQualityMenuOpen(false); }}
+                className="inline-flex h-9 min-w-[56px] items-center justify-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
+                aria-label={`Frame interval ${frameInterval}s`}
+                title="Frame strip density"
+              >
+                <Film className="h-3.5 w-3.5" />
+                {frameInterval}s
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+
+              {frameStripMenuOpen && (
+                <div
+                  className="absolute right-0 bottom-11 z-30 min-w-[100px] rounded-lg border border-white/10 bg-black/90 p-1.5 text-sm text-white shadow-2xl backdrop-blur"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {FRAME_INTERVALS.map((iv) => (
+                    <button
+                      key={iv}
+                      type="button"
+                      onClick={() => {
+                        setFrameInterval(iv);
+                        setFrameStripMenuOpen(false);
+                        showControls();
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-white/95 transition hover:bg-white/10"
+                    >
+                      <span>{iv}s</span>
+                      {frameInterval === iv && <Check className="h-4 w-4" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleSeekBy(-seekStep); }}
@@ -826,7 +896,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           <div className="relative hidden sm:block">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); showControls(); setSeekStepMenuOpen((c) => !c); setSpeedMenuOpen(false); setQualityMenuOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); showControls(); setSeekStepMenuOpen((c) => !c); setSpeedMenuOpen(false); setQualityMenuOpen(false); setFrameStripMenuOpen(false); }}
               className="inline-flex h-9 min-w-[44px] items-center justify-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
               aria-label={`Seek step ${seekStep}s`}
               title="Change seek step"
@@ -872,7 +942,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           <div className="relative">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); showControls(); setSpeedMenuOpen((c) => !c); setQualityMenuOpen(false); setSeekStepMenuOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); showControls(); setSpeedMenuOpen((c) => !c); setQualityMenuOpen(false); setSeekStepMenuOpen(false); setFrameStripMenuOpen(false); }}
               className="inline-flex h-9 min-w-[56px] items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
               aria-label={`Playback speed ${playbackRate}x`}
               title="Change playback speed"
@@ -912,7 +982,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           <div className="relative">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); showControls(); setQualityMenuOpen((c) => !c); setSpeedMenuOpen(false); setSeekStepMenuOpen(false); }}
+              onClick={(e) => { e.stopPropagation(); showControls(); setQualityMenuOpen((c) => !c); setSpeedMenuOpen(false); setSeekStepMenuOpen(false); setFrameStripMenuOpen(false); }}
               className="inline-flex h-9 min-w-[108px] items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/95 transition hover:border-white/25 hover:bg-white/15"
               aria-label={`Quality ${qualityLabel}`}
               title="Quality settings"
@@ -1062,6 +1132,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           setQualityMenuOpen(false);
           setSpeedMenuOpen(false);
           setSeekStepMenuOpen(false);
+          setFrameStripMenuOpen(false);
           const rect = e.currentTarget.getBoundingClientRect();
           const menuWidth = 180;
           const menuHeight = 120;
