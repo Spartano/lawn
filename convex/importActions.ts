@@ -70,14 +70,14 @@ async function extractInstagramVideoUrl(pageUrl: string): Promise<string> {
 }
 
 function extractVideoUrlFromHtml(html: string): string | null {
-  // Prefer Instagram/Facebook CDN .mp4 URLs
-  const cdnMatch = html.match(/https?:\\?\/\\?\/[^"'\s\\]*?(?:cdninstagram\.com|fbcdn\.net|fbcdn\.com)[^"'\s\\]*?\.mp4[^"'\s\\]*/);
+  // Instagram/Facebook CDN .mp4 URLs (URLs use \/ for slashes in JSON contexts)
+  const cdnMatch = html.match(/https?:\\?\/\\?\/[^"'\s]*?(?:cdninstagram\.com|fbcdn\.net|fbcdn\.com|instagram\.com)[^"'\s]*?\.mp4[^"'\s]*/);
   if (cdnMatch) {
     return unescapeInstagramUrl(cdnMatch[0]);
   }
 
   // Fallback: any https .mp4 URL
-  const anyMp4Match = html.match(/https?:\\?\/\\?\/[^"'\s\\]+\.mp4[^"'\s\\]*/);
+  const anyMp4Match = html.match(/https?:\\?\/\\?\/[^"'\s]+\.mp4[^"'\s]*/);
   if (anyMp4Match) {
     return unescapeInstagramUrl(anyMp4Match[0]);
   }
@@ -242,22 +242,3 @@ async function buildSignedS3Url(key: string): Promise<string> {
   });
   return await getSignedUrl(s3, command, { expiresIn: 60 * 60 * 24 });
 }
-
-export const resolveVideoUrl = action({
-  args: {
-    url: v.string(),
-  },
-  returns: v.object({
-    videoUrl: v.string(),
-  }),
-  handler: async (_ctx, args): Promise<{ videoUrl: string }> => {
-    const parsed = validateImportUrl(args.url);
-
-    if (isInstagramUrl(args.url)) {
-      const videoUrl = await extractInstagramVideoUrl(args.url);
-      return { videoUrl };
-    }
-
-    return { videoUrl: parsed.toString() };
-  },
-});

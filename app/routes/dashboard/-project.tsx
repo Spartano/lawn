@@ -660,7 +660,6 @@ export default function ProjectPage({
           open={importDialogOpen}
           onOpenChange={setImportDialogOpen}
           projectId={resolvedProjectId}
-          onFilesSelected={handleFilesSelected}
         />
       )}
     </div>
