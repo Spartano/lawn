@@ -20,6 +20,7 @@ import {
   Download,
   MessageSquare,
   Eye,
+  Link2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,6 +42,7 @@ import { prewarmTeam } from "./-team.data";
 import { prewarmVideo } from "./-video.data";
 import { useDashboardUploadContext } from "@/lib/dashboardUploadContext";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ImportVideoDialog } from "@/components/ImportVideoDialog";
 
 type ViewMode = "grid" | "list";
 type ShareToastState = {
@@ -145,6 +147,7 @@ export default function ProjectPage({
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [shareToast, setShareToast] = useState<ShareToastState | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const shareToastTimeoutRef = useRef<number | null>(null);
 
   const shouldCanonicalize =
@@ -315,7 +318,17 @@ export default function ProjectPage({
             </button>
           </div>
           {canUpload && (
-            <UploadButton onFilesSelected={handleFilesSelected} />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setImportDialogOpen(true)}
+                className="inline-flex items-center gap-1.5 border-2 border-[#1a1a1a] bg-transparent px-3 py-1.5 text-sm font-semibold text-[#1a1a1a] transition hover:bg-[#1a1a1a] hover:text-[#f0f0e8]"
+              >
+                <Link2 className="h-4 w-4" />
+                Import
+              </button>
+              <UploadButton onFilesSelected={handleFilesSelected} />
+            </div>
           )}
         </div>
       </DashboardHeader>
@@ -641,6 +654,15 @@ export default function ProjectPage({
           </div>
         </div>
       ) : null}
+
+      {resolvedProjectId && (
+        <ImportVideoDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          projectId={resolvedProjectId}
+          onFilesSelected={handleFilesSelected}
+        />
+      )}
     </div>
   );
 }

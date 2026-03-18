@@ -13,6 +13,7 @@ import type * as billing from "../billing.js";
 import type * as billingHelpers from "../billingHelpers.js";
 import type * as comments from "../comments.js";
 import type * as http from "../http.js";
+import type * as importActions from "../importActions.js";
 import type * as intakeForms from "../intakeForms.js";
 import type * as intakeSubmissions from "../intakeSubmissions.js";
 import type * as intakeSubmissionsHelpers from "../intakeSubmissionsHelpers.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   billingHelpers: typeof billingHelpers;
   comments: typeof comments;
   http: typeof http;
+  importActions: typeof importActions;
   intakeForms: typeof intakeForms;
   intakeSubmissions: typeof intakeSubmissions;
   intakeSubmissionsHelpers: typeof intakeSubmissionsHelpers;
