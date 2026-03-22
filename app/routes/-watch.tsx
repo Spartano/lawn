@@ -194,7 +194,7 @@ export default function WatchPage() {
       {/* Main content - horizontal split */}
       <div className="flex-1 flex overflow-hidden">
         {/* Media viewer area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-black">
+        <div className="flex min-h-0 flex-1 flex-col min-w-0 overflow-hidden bg-black">
           {playbackSession?.mediaType === "image" && playbackSession?.url ? (
             <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
               <img

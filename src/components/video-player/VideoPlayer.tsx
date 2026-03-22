@@ -17,6 +17,8 @@ import {
   Check,
   ChevronDown,
   Film,
+  LayoutGrid,
+  PanelBottom,
 } from "lucide-react";
 import { cn, formatDuration, formatTimestamp } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download";
@@ -135,6 +137,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const [selectedQualityLevel, setSelectedQualityLevel] = useState<number>(AUTO_QUALITY_LEVEL);
   const [frameInterval, setFrameInterval] = useState<FrameInterval>(2);
   const [frameStripMenuOpen, setFrameStripMenuOpen] = useState(false);
+  /** When controlsBelow: strips overlay the video; toggles hide without resizing the video area. */
+  const [filmStripOverlayVisible, setFilmStripOverlayVisible] = useState(true);
+  const [contextStripOverlayVisible, setContextStripOverlayVisible] = useState(true);
 
   const hideControlsTimeoutRef = useRef<number | null>(null);
   const wasPlayingBeforeScrubRef = useRef(false);
@@ -985,8 +990,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         />
       </div>
 
-      {/* Frame strip */}
-      {muxPlaybackId && duration > 0 && (
+      {/* Frame + context strips: in document flow only for overlay layout; controlsBelow uses absolute overlay */}
+      {!isExternalControls && muxPlaybackId && duration > 0 && (
         <FrameStrip
           muxPlaybackId={muxPlaybackId}
           duration={duration}
@@ -996,8 +1001,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         />
       )}
 
-      {/* ±1s context strip: canvas samples from the decoded stream (no Mux image API). */}
-      {duration > 0 && (
+      {!isExternalControls && duration > 0 && (
         <SubSecondStrip
           frames={subSecondFrames}
           times={subSecondTimes}
@@ -1047,6 +1051,44 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          {isExternalControls && muxPlaybackId && duration > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFilmStripOverlayVisible((v) => !v);
+                showControls();
+              }}
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-white/25 hover:bg-white/15",
+                filmStripOverlayVisible ? "text-white" : "text-white/35",
+              )}
+              aria-label={filmStripOverlayVisible ? "Hide film strip" : "Show film strip"}
+              aria-pressed={filmStripOverlayVisible}
+              title="Film strip overlay"
+            >
+              <PanelBottom className="h-4 w-4" />
+            </button>
+          )}
+          {isExternalControls && duration > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setContextStripOverlayVisible((v) => !v);
+                showControls();
+              }}
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-white/25 hover:bg-white/15",
+                contextStripOverlayVisible ? "text-white" : "text-white/35",
+              )}
+              aria-label={contextStripOverlayVisible ? "Hide context strip" : "Show context strip"}
+              aria-pressed={contextStripOverlayVisible}
+              title="Context strip overlay"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          )}
           {muxPlaybackId && (
             <div className="relative hidden sm:block">
               <button
@@ -1280,7 +1322,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       ref={wrapperRef}
       className={cn(
         "relative",
-        controlsBelow ? "flex flex-col flex-1 min-h-0 bg-black" : "",
+        controlsBelow ? "flex min-h-0 flex-1 flex-col bg-black" : "",
         className,
       )}
     >
@@ -1289,7 +1331,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         className={cn(
           "relative w-full overflow-hidden bg-black",
           controlsBelow
-            ? "flex-1 min-h-0"
+            ? "min-h-0 flex-1"
             : cn(
                 "aspect-video rounded-xl border border-zinc-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.45)]",
                 isFullscreen && "rounded-none border-none shadow-none"
@@ -1418,6 +1460,37 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         {isBuffering && isPlaying && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div className="h-9 w-9 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
+          </div>
+        )}
+
+        {/* Film + context strips: absolute over video when controls are below (does not change video height) */}
+        {isExternalControls && (filmStripOverlayVisible || contextStripOverlayVisible) && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[18] flex max-h-[55%] flex-col justify-end">
+            <div className="pointer-events-none flex max-h-full min-h-0 flex-col justify-end gap-0 overflow-y-auto overscroll-contain bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-1 pt-6">
+              {filmStripOverlayVisible && muxPlaybackId && duration > 0 && (
+                <div className="pointer-events-auto">
+                  <FrameStrip
+                    muxPlaybackId={muxPlaybackId}
+                    duration={duration}
+                    currentTime={displayTime}
+                    interval={frameInterval}
+                    onSeek={handleFrameStripSeek}
+                  />
+                </div>
+              )}
+              {contextStripOverlayVisible && duration > 0 && (
+                <div className="pointer-events-auto">
+                  <SubSecondStrip
+                    frames={subSecondFrames}
+                    times={subSecondTimes}
+                    anchorSeconds={contextStripAnchor ?? 0}
+                    activeIndex={subSecondActiveIndex}
+                    onSeek={applyTime}
+                    loading={subSecondLoading}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
