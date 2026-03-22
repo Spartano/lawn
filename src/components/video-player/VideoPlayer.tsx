@@ -106,6 +106,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  /** Off-screen clone of the stream for context-strip sampling only (main video never seeks during capture). */
+  const captureVideoRef = useRef<HTMLVideoElement>(null);
+  const hlsCaptureRef = useRef<Hls | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
   const [duration, setDuration] = useState(0);
@@ -142,8 +145,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const resumeTimeOnSourceChangeRef = useRef<number | null>(null);
   const captureCanvasRef = useRef<HTMLCanvasElement>(null);
   const subCaptureGenRef = useRef(0);
-  /** While true, ignore `timeupdate` so context-strip seeks don't change React state and retrigger capture. */
-  const suppressTimeUpdateRef = useRef(false);
   const onTimeUpdateRef = useRef(onTimeUpdate);
   onTimeUpdateRef.current = onTimeUpdate;
 
@@ -489,7 +490,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     };
 
     const handleTimeUpdate = () => {
-      if (cancelled || isScrubbingRef.current || suppressTimeUpdateRef.current) return;
+      if (cancelled || isScrubbingRef.current) return;
       const time = video.currentTime || 0;
       setCurrentTime(time);
       onTimeUpdateRef.current?.(time);
@@ -551,6 +552,35 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       if (cancelled) return;
       setIsPlaying(false);
       setControlsVisible(true);
+    };
+
+    const attachCaptureSource = async () => {
+      const captureVideo = captureVideoRef.current;
+      if (!captureVideo) return;
+
+      if (hlsCaptureRef.current) {
+        hlsCaptureRef.current.destroy();
+        hlsCaptureRef.current = null;
+      }
+
+      captureVideo.removeAttribute("src");
+      captureVideo.load();
+
+      if (isHlsSource(src)) {
+        const { default: Hls } = await import("hls.js");
+        if (cancelled) return;
+
+        if (Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true });
+          hlsCaptureRef.current = hls;
+          hls.loadSource(src);
+          hls.attachMedia(captureVideo);
+        } else {
+          captureVideo.src = src;
+        }
+      } else {
+        captureVideo.src = src;
+      }
     };
 
     const attachSource = async () => {
@@ -619,6 +649,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       } else {
         video.src = src;
       }
+
+      await attachCaptureSource();
     };
 
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -639,6 +671,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     attachSource().catch(() => {
       // If HLS import fails, fall back to setting the src directly.
       video.src = src;
+      void attachCaptureSource();
     });
 
     return () => {
@@ -672,6 +705,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
 
       video.removeAttribute("src");
       video.load();
+
+      if (hlsCaptureRef.current) {
+        hlsCaptureRef.current.destroy();
+        hlsCaptureRef.current = null;
+      }
+      const captureVideo = captureVideoRef.current;
+      if (captureVideo) {
+        captureVideo.removeAttribute("src");
+        captureVideo.load();
+      }
     };
   }, [src, initialTime, showControls, updateBuffered]);
 
@@ -791,9 +834,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       return;
     }
 
-    const video = videoRef.current;
+    const mainVideo = videoRef.current;
+    const captureVideo = captureVideoRef.current;
     const canvas = captureCanvasRef.current;
-    if (!video || !canvas) return;
+    if (!mainVideo || !captureVideo || !canvas) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -807,70 +851,59 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     let cancelled = false;
 
     async function run() {
-      const restoreTime = video.currentTime;
+      const restoreTime = mainVideo.currentTime;
       const times: number[] = [];
       for (let i = 0; i < n; i++) {
         const raw = center - half + (span * i) / (n - 1);
         times.push(clamp(raw, 0, Math.max(0, duration - 1e-6)));
       }
 
-      suppressTimeUpdateRef.current = true;
-      try {
-        setSubSecondLoading(true);
-        await waitForVideoDimensions(video);
+      setSubSecondLoading(true);
+      await waitForVideoDimensions(captureVideo);
+      if (cancelled || subCaptureGenRef.current !== gen) return;
+
+      const urls: string[] = [];
+      for (let i = 0; i < n; i++) {
         if (cancelled || subCaptureGenRef.current !== gen) return;
 
-        const urls: string[] = [];
-        for (let i = 0; i < n; i++) {
-          if (cancelled || subCaptureGenRef.current !== gen) return;
-
-          if (i > 0 && Math.abs(times[i] - times[i - 1]) < 1e-5) {
-            urls.push(urls[i - 1]);
-            continue;
-          }
-
-          await seekVideoForCapture(video, times[i]);
-          if (cancelled || subCaptureGenRef.current !== gen) return;
-
-          const vw = video.videoWidth;
-          const vh = video.videoHeight;
-          if (!vw || !vh) continue;
-          canvas.width = vw;
-          canvas.height = vh;
-          ctx.drawImage(video, 0, 0, vw, vh);
-          try {
-            urls.push(canvas.toDataURL("image/jpeg", 0.82));
-          } catch {
-            await seekVideoForCapture(video, restoreTime);
-            if (cancelled || subCaptureGenRef.current !== gen) return;
-            setSubSecondLoading(false);
-            return;
-          }
+        if (i > 0 && Math.abs(times[i] - times[i - 1]) < 1e-5) {
+          urls.push(urls[i - 1]);
+          continue;
         }
 
+        await seekVideoForCapture(captureVideo, times[i]);
         if (cancelled || subCaptureGenRef.current !== gen) return;
-        if (urls.length !== n) {
-          await seekVideoForCapture(video, restoreTime);
+
+        const vw = captureVideo.videoWidth;
+        const vh = captureVideo.videoHeight;
+        if (!vw || !vh) continue;
+        canvas.width = vw;
+        canvas.height = vh;
+        ctx.drawImage(captureVideo, 0, 0, vw, vh);
+        try {
+          urls.push(canvas.toDataURL("image/jpeg", 0.82));
+        } catch {
+          await seekVideoForCapture(captureVideo, restoreTime);
           if (cancelled || subCaptureGenRef.current !== gen) return;
           setSubSecondLoading(false);
           return;
         }
-
-        await seekVideoForCapture(video, restoreTime);
-        if (cancelled || subCaptureGenRef.current !== gen) return;
-
-        setSubSecondTimes(times);
-        setSubSecondFrames(urls);
-        setSubSecondLoading(false);
-      } finally {
-        suppressTimeUpdateRef.current = false;
-        const v = videoRef.current;
-        if (v) {
-          const t = v.currentTime;
-          setCurrentTime(t);
-          onTimeUpdateRef.current?.(t);
-        }
       }
+
+      if (cancelled || subCaptureGenRef.current !== gen) return;
+      if (urls.length !== n) {
+        await seekVideoForCapture(captureVideo, restoreTime);
+        if (cancelled || subCaptureGenRef.current !== gen) return;
+        setSubSecondLoading(false);
+        return;
+      }
+
+      await seekVideoForCapture(captureVideo, restoreTime);
+      if (cancelled || subCaptureGenRef.current !== gen) return;
+
+      setSubSecondTimes(times);
+      setSubSecondFrames(urls);
+      setSubSecondLoading(false);
     }
 
     void run();
@@ -1318,7 +1351,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           className={cn(
             "h-full w-full object-contain transition-opacity duration-200",
             isMediaReady ? "opacity-100" : "opacity-0",
-            subSecondLoading && "opacity-0",
           )}
           playsInline
           preload="auto"
@@ -1328,15 +1360,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           }}
         />
 
-        {subSecondLoading && (
-          <div
-            className="pointer-events-none absolute inset-0 z-[25] flex flex-col items-center justify-center gap-2 bg-black/95"
-            aria-hidden
-          >
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white/75" />
-            <p className="text-xs font-medium text-white/80">Capturing context strip…</p>
-          </div>
-        )}
+        {/* Same stream as main; seeks here do not move the visible player. */}
+        <video
+          ref={captureVideoRef}
+          className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
+          crossOrigin="anonymous"
+          muted
+          playsInline
+          preload="auto"
+          tabIndex={-1}
+          aria-hidden
+        />
 
         <canvas
           ref={captureCanvasRef}
@@ -1364,7 +1398,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         )}
 
         {/* Big play button */}
-        {!isPlaying && !subSecondLoading && (
+        {!isPlaying && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <button
               type="button"
