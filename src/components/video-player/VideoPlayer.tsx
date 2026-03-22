@@ -21,6 +21,8 @@ import {
 import { cn, formatDuration, formatTimestamp } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download";
 import { FrameStrip, FRAME_INTERVALS, type FrameInterval } from "./FrameStrip";
+import { SubSecondStrip, CONTEXT_STRIP_SAMPLES } from "./SubSecondStrip";
+import { seekVideoForCapture, waitForVideoDimensions } from "./frameCapture";
 
 interface Comment {
   _id: string;
@@ -138,6 +140,19 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const isPlayingRef = useRef(false);
   const isScrubbingRef = useRef(false);
   const resumeTimeOnSourceChangeRef = useRef<number | null>(null);
+  const captureCanvasRef = useRef<HTMLCanvasElement>(null);
+  const subCaptureGenRef = useRef(0);
+  /** While true, ignore `timeupdate` so context-strip seeks don't change React state and retrigger capture. */
+  const suppressTimeUpdateRef = useRef(false);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+
+  const [subSecondFrames, setSubSecondFrames] = useState<string[]>([]);
+  const [subSecondTimes, setSubSecondTimes] = useState<number[]>([]);
+  const [subSecondLoading, setSubSecondLoading] = useState(false);
+  /** Timeline second used to center the context strip (±0.9s); fixed while paused unless you scrub or play again. */
+  const [contextStripAnchor, setContextStripAnchor] = useState<number | null>(null);
+  const prevPlayingForAnchorRef = useRef(false);
 
   const groupedMarkers = useMemo(() => {
     if (!duration || comments.length === 0) return [] as { position: number; comment: Comment }[];
@@ -181,9 +196,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       const next = actualDuration > 0 ? clamp(time, 0, actualDuration) : Math.max(time, 0);
       video.currentTime = next;
       setCurrentTime(next);
-      onTimeUpdate?.(next);
+      onTimeUpdateRef.current?.(next);
     },
-    [duration, onTimeUpdate]
+    [duration]
   );
 
   const seekTo = useCallback(
@@ -213,6 +228,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       showControls();
     },
     [applyTime, showControls]
+  );
+
+  /** Film strip: seek and re-center the context strip on this time (when paused, regenerates the 20 tiles). */
+  const handleFrameStripSeek = useCallback(
+    (time: number) => {
+      applyTime(time);
+      setContextStripAnchor(time);
+    },
+    [applyTime],
   );
 
   const togglePlay = useCallback(() => {
@@ -361,9 +385,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       scrubTimeRef.current = nextTime;
       setScrubTime(nextTime);
       setCurrentTime(nextTime);
-      onTimeUpdate?.(nextTime);
+      onTimeUpdateRef.current?.(nextTime);
     },
-    [duration, getTimeFromClientX, onTimeUpdate]
+    [duration, getTimeFromClientX]
   );
 
   const updateScrub = useCallback(
@@ -373,9 +397,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       scrubTimeRef.current = nextTime;
       setScrubTime(nextTime);
       setCurrentTime(nextTime);
-      onTimeUpdate?.(nextTime);
+      onTimeUpdateRef.current?.(nextTime);
     },
-    [getTimeFromClientX, onTimeUpdate]
+    [getTimeFromClientX]
   );
 
   const endScrub = useCallback(() => {
@@ -386,6 +410,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     video.currentTime = finalTime;
     setCurrentTime(finalTime);
     setIsScrubbing(false);
+
+    if (!wasPlayingBeforeScrubRef.current) {
+      setContextStripAnchor(finalTime);
+    }
 
     if (wasPlayingBeforeScrubRef.current) {
       const playPromise = video.play();
@@ -404,6 +432,24 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   useEffect(() => {
     isScrubbingRef.current = isScrubbing;
   }, [isScrubbing]);
+
+  useEffect(() => {
+    if (prevPlayingForAnchorRef.current && !isPlaying) {
+      const v = videoRef.current;
+      if (v) setContextStripAnchor(v.currentTime);
+    }
+    if (isPlaying) {
+      setContextStripAnchor(null);
+    }
+    prevPlayingForAnchorRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isMediaReady || isPlaying) return;
+    if (contextStripAnchor !== null) return;
+    const v = videoRef.current;
+    if (v) setContextStripAnchor(v.currentTime);
+  }, [isMediaReady, isPlaying, contextStripAnchor]);
 
   useEffect(() => {
     return () => {
@@ -443,10 +489,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     };
 
     const handleTimeUpdate = () => {
-      if (cancelled || isScrubbingRef.current) return;
+      if (cancelled || isScrubbingRef.current || suppressTimeUpdateRef.current) return;
       const time = video.currentTime || 0;
       setCurrentTime(time);
-      onTimeUpdate?.(time);
+      onTimeUpdateRef.current?.(time);
     };
 
     const handlePlay = () => {
@@ -627,7 +673,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       video.removeAttribute("src");
       video.load();
     };
-  }, [src, initialTime, onTimeUpdate, showControls, updateBuffered]);
+  }, [src, initialTime, showControls, updateBuffered]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -722,6 +768,118 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   }, [frameStripMenuOpen]);
 
   const displayTime = isScrubbing ? scrubTime : currentTime;
+
+  const subSecondActiveIndex = useMemo(() => {
+    if (subSecondTimes.length === 0) return 0;
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < subSecondTimes.length; i++) {
+      const d = Math.abs(displayTime - subSecondTimes[i]);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    return best;
+  }, [displayTime, subSecondTimes]);
+
+  useEffect(() => {
+    if (isPlaying || !isMediaReady || !duration || isScrubbing || contextStripAnchor === null) {
+      setSubSecondFrames([]);
+      setSubSecondTimes([]);
+      setSubSecondLoading(false);
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = captureCanvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const gen = ++subCaptureGenRef.current;
+    const half = 0.9;
+    const n = CONTEXT_STRIP_SAMPLES;
+    const span = half * 2;
+    const center = contextStripAnchor;
+
+    let cancelled = false;
+
+    async function run() {
+      const restoreTime = video.currentTime;
+      const times: number[] = [];
+      for (let i = 0; i < n; i++) {
+        const raw = center - half + (span * i) / (n - 1);
+        times.push(clamp(raw, 0, Math.max(0, duration - 1e-6)));
+      }
+
+      suppressTimeUpdateRef.current = true;
+      try {
+        setSubSecondLoading(true);
+        await waitForVideoDimensions(video);
+        if (cancelled || subCaptureGenRef.current !== gen) return;
+
+        const urls: string[] = [];
+        for (let i = 0; i < n; i++) {
+          if (cancelled || subCaptureGenRef.current !== gen) return;
+
+          if (i > 0 && Math.abs(times[i] - times[i - 1]) < 1e-5) {
+            urls.push(urls[i - 1]);
+            continue;
+          }
+
+          await seekVideoForCapture(video, times[i]);
+          if (cancelled || subCaptureGenRef.current !== gen) return;
+
+          const vw = video.videoWidth;
+          const vh = video.videoHeight;
+          if (!vw || !vh) continue;
+          canvas.width = vw;
+          canvas.height = vh;
+          ctx.drawImage(video, 0, 0, vw, vh);
+          try {
+            urls.push(canvas.toDataURL("image/jpeg", 0.82));
+          } catch {
+            await seekVideoForCapture(video, restoreTime);
+            if (cancelled || subCaptureGenRef.current !== gen) return;
+            setSubSecondLoading(false);
+            return;
+          }
+        }
+
+        if (cancelled || subCaptureGenRef.current !== gen) return;
+        if (urls.length !== n) {
+          await seekVideoForCapture(video, restoreTime);
+          if (cancelled || subCaptureGenRef.current !== gen) return;
+          setSubSecondLoading(false);
+          return;
+        }
+
+        await seekVideoForCapture(video, restoreTime);
+        if (cancelled || subCaptureGenRef.current !== gen) return;
+
+        setSubSecondTimes(times);
+        setSubSecondFrames(urls);
+        setSubSecondLoading(false);
+      } finally {
+        suppressTimeUpdateRef.current = false;
+        const v = videoRef.current;
+        if (v) {
+          const t = v.currentTime;
+          setCurrentTime(t);
+          onTimeUpdateRef.current?.(t);
+        }
+      }
+    }
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPlaying, isMediaReady, duration, isScrubbing, contextStripAnchor, src]);
+
   const playedPercent = duration > 0 ? clamp(displayTime / duration, 0, 1) : 0;
   const canDownload = allowDownload && (Boolean(downloadUrl) || Boolean(onRequestDownload));
   const isHls = isHlsSource(src);
@@ -801,7 +959,19 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           duration={duration}
           currentTime={displayTime}
           interval={frameInterval}
+          onSeek={handleFrameStripSeek}
+        />
+      )}
+
+      {/* ±1s context strip: canvas samples from the decoded stream (no Mux image API). */}
+      {duration > 0 && (
+        <SubSecondStrip
+          frames={subSecondFrames}
+          times={subSecondTimes}
+          anchorSeconds={contextStripAnchor ?? 0}
+          activeIndex={subSecondActiveIndex}
           onSeek={applyTime}
+          loading={subSecondLoading}
         />
       )}
 
@@ -1144,9 +1314,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         <video
           ref={videoRef}
           poster={poster}
+          crossOrigin="anonymous"
           className={cn(
             "h-full w-full object-contain transition-opacity duration-200",
-            isMediaReady ? "opacity-100" : "opacity-0"
+            isMediaReady ? "opacity-100" : "opacity-0",
+            subSecondLoading && "opacity-0",
           )}
           playsInline
           preload="auto"
@@ -1154,6 +1326,22 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
             e.stopPropagation();
             togglePlay();
           }}
+        />
+
+        {subSecondLoading && (
+          <div
+            className="pointer-events-none absolute inset-0 z-[25] flex flex-col items-center justify-center gap-2 bg-black/95"
+            aria-hidden
+          >
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white/75" />
+            <p className="text-xs font-medium text-white/80">Capturing context strip…</p>
+          </div>
+        )}
+
+        <canvas
+          ref={captureCanvasRef}
+          className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
+          aria-hidden
         />
 
         {!isMediaReady && (
@@ -1176,7 +1364,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         )}
 
         {/* Big play button */}
-        {!isPlaying && (
+        {!isPlaying && !subSecondLoading && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <button
               type="button"

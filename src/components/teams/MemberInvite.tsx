@@ -44,6 +44,7 @@ export function MemberInvite({ teamId, open, onOpenChange }: MemberInviteProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   const members = useQuery(api.teams.getMembers, { teamId });
   const invites = useQuery(api.teams.getInvites, { teamId });
@@ -56,6 +57,7 @@ export function MemberInvite({ teamId, open, onOpenChange }: MemberInviteProps) 
     if (!email.trim()) return;
 
     setIsLoading(true);
+    setInviteError(null);
     try {
       const token = await inviteMember({
         teamId,
@@ -67,6 +69,9 @@ export function MemberInvite({ teamId, open, onOpenChange }: MemberInviteProps) 
       setEmail("");
     } catch (error) {
       console.error("Failed to invite member:", error);
+      setInviteError(
+        error instanceof Error ? error.message : "Could not create invite",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +110,9 @@ export function MemberInvite({ teamId, open, onOpenChange }: MemberInviteProps) 
         <DialogHeader>
           <DialogTitle>Team members</DialogTitle>
           <DialogDescription>
-            Invite new members or manage existing ones.
+            Create an invite link and share it (we don&apos;t send email). The
+            invitee must open the link and sign in with the email you enter
+            below.
           </DialogDescription>
         </DialogHeader>
 
@@ -140,9 +147,15 @@ export function MemberInvite({ teamId, open, onOpenChange }: MemberInviteProps) 
           </div>
           <Button type="submit" disabled={!email.trim() || isLoading} className="w-full">
             <UserPlus className="mr-2 h-4 w-4" />
-            {isLoading ? "Sending..." : "Send invite"}
+            {isLoading ? "Creating…" : "Create invite link"}
           </Button>
         </form>
+
+        {inviteError && (
+          <p className="text-sm text-[#dc2626] border-2 border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2">
+            {inviteError}
+          </p>
+        )}
 
         {inviteLink && (
           <div className="border-2 border-[#1a1a1a] bg-[#e8e8e0] p-3">

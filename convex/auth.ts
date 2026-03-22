@@ -32,6 +32,26 @@ export function identityEmail(identity: ClerkIdentity): string {
   return getOptionalString(identity, "email") ?? "";
 }
 
+/** All emails from the JWT (primary + optional custom claims). Used for invite acceptance. */
+export function identityEmailsNormalized(identity: ClerkIdentity): string[] {
+  const normalizedEmail = (value: string) => value.trim().toLowerCase();
+  const set = new Set<string>();
+
+  const primary = identityEmail(identity);
+  if (primary) set.add(normalizedEmail(primary));
+
+  const extra = (identity as Record<string, unknown>)["email_addresses"];
+  if (Array.isArray(extra)) {
+    for (const item of extra) {
+      if (typeof item === "string" && item.length > 0) {
+        set.add(normalizedEmail(item));
+      }
+    }
+  }
+
+  return [...set];
+}
+
 export function identityAvatarUrl(identity: ClerkIdentity): string | undefined {
   return getOptionalString(identity, "pictureUrl");
 }

@@ -1,6 +1,14 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { getUser, identityAvatarUrl, identityEmail, identityName, requireUser, requireTeamAccess } from "./auth";
+import {
+  getUser,
+  identityAvatarUrl,
+  identityEmail,
+  identityEmailsNormalized,
+  identityName,
+  requireUser,
+  requireTeamAccess,
+} from "./auth";
 import { getTeamSubscriptionState } from "./billingHelpers";
 
 function normalizedEmail(value: string) {
@@ -259,7 +267,8 @@ export const acceptInvite = mutation({
       throw new Error("Invite has expired");
     }
 
-    if (invite.email !== normalizedEmail(identityEmail(user))) {
+    const inviteeEmails = identityEmailsNormalized(user);
+    if (!inviteeEmails.includes(invite.email)) {
       throw new Error("Invite is for a different email address");
     }
 
@@ -277,7 +286,7 @@ export const acceptInvite = mutation({
     await ctx.db.insert("teamMembers", {
       teamId: invite.teamId,
       userClerkId: user.subject,
-      userEmail: normalizedEmail(identityEmail(user)),
+      userEmail: invite.email,
       userName: identityName(user),
       userAvatarUrl: identityAvatarUrl(user),
       role: invite.role,

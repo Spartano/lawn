@@ -7,8 +7,8 @@ import { VideoPlayer, type VideoPlayerHandle } from "@/components/video-player/V
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { formatDuration, formatTimestamp, formatRelativeTime } from "@/lib/utils";
-import { AlertCircle, MessageSquare, Clock, X } from "lucide-react";
+import { cn, formatDuration, formatTimestamp, formatRelativeTime } from "@/lib/utils";
+import { AlertCircle, MessageSquare, Clock, X, PanelLeft, PanelRight } from "lucide-react";
 import { useWatchData } from "./-watch.data";
 
 export default function WatchPage() {
@@ -32,6 +32,7 @@ export default function WatchPage() {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [mobileCommentsOpen, setMobileCommentsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const playerRef = useRef<VideoPlayerHandle | null>(null);
 
   const videoMediaType = (videoData?.video as { mediaType?: string } | undefined)?.mediaType;
@@ -166,6 +167,17 @@ export default function WatchPage() {
             </>
           )}
           <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="hidden lg:inline-flex h-8 w-8 flex-shrink-0"
+            onClick={() => setSidebarCollapsed((c) => !c)}
+            aria-label={sidebarCollapsed ? "Show discussion panel" : "Hide discussion panel"}
+            title={sidebarCollapsed ? "Show discussion" : "Hide discussion"}
+          >
+            {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             className="lg:hidden h-8"
@@ -215,7 +227,12 @@ export default function WatchPage() {
         </div>
 
         {/* Comments sidebar — desktop */}
-        <aside className="hidden lg:flex w-80 xl:w-96 border-l-2 border-[#1a1a1a] flex-col bg-[#f0f0e8]">
+        <aside
+          className={cn(
+            "flex-col bg-[#f0f0e8]",
+            sidebarCollapsed ? "hidden" : "hidden lg:flex w-80 xl:w-96 border-l-2 border-[#1a1a1a]",
+          )}
+        >
           <div className="flex-shrink-0 px-5 py-4 border-b border-[#1a1a1a]/10 flex items-center justify-between">
             <h2 className="font-semibold text-sm tracking-tight flex items-center gap-2 text-[#1a1a1a]">
               Discussion

@@ -14,7 +14,7 @@ import {
   VideoWorkflowStatusControl,
   type VideoWorkflowStatus,
 } from "@/components/videos/VideoWorkflowStatusControl";
-import { formatDuration } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 import { useVideoPresence } from "@/lib/useVideoPresence";
 import { VideoWatchers } from "@/components/presence/VideoWatchers";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -25,6 +25,8 @@ import {
   Link as LinkIcon,
   MessageSquare,
   MoreVertical,
+  PanelLeft,
+  PanelRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -73,6 +75,7 @@ export default function VideoPage() {
   const [highlightedCommentId, setHighlightedCommentId] = useState<Id<"comments"> | undefined>();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [mobileCommentsOpen, setMobileCommentsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [playbackSession, setPlaybackSession] = useState<{
     url: string;
     posterUrl: string;
@@ -328,6 +331,17 @@ export default function VideoPage() {
           <VideoWatchers watchers={watchers} />
         </div>
         <div className="hidden sm:flex items-center gap-3 flex-shrink-0 border-l-2 border-[#1a1a1a]/20 pl-3 ml-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="hidden lg:inline-flex h-9 w-9 flex-shrink-0"
+            onClick={() => setSidebarCollapsed((c) => !c)}
+            aria-label={sidebarCollapsed ? "Show discussion panel" : "Hide discussion panel"}
+            title={sidebarCollapsed ? "Show discussion" : "Hide discussion"}
+          >
+            {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+          </Button>
           <VideoWorkflowStatusControl
             status={video.workflowStatus}
             size="lg"
@@ -457,7 +471,12 @@ export default function VideoPage() {
         </div>
 
         {/* Comments sidebar — desktop */}
-        <aside className="hidden lg:flex w-80 xl:w-96 border-l-2 border-[#1a1a1a] flex-col bg-[#f0f0e8]">
+        <aside
+          className={cn(
+            "flex-col bg-[#f0f0e8]",
+            sidebarCollapsed ? "hidden" : "hidden lg:flex w-80 xl:w-96 border-l-2 border-[#1a1a1a]",
+          )}
+        >
           <div className="flex-shrink-0 px-5 py-4 border-b border-[#1a1a1a]/10 dark:border-white/10 flex items-center justify-between">
             <h2 className="font-semibold text-sm tracking-tight flex items-center gap-2 text-[#1a1a1a] dark:text-[#f0f0e8]">
               Discussion
