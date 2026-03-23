@@ -27,7 +27,9 @@ export function FrameStrip({
   interval,
   onSeek,
 }: FrameStripProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -72,6 +74,35 @@ export function FrameStrip({
     const idx = Math.floor(currentTime / interval);
     return Math.min(idx, frames.length - 1);
   }, [currentTime, interval, frames.length]);
+
+  useEffect(() => {
+    tileRefs.current = tileRefs.current.slice(0, frames.length);
+  }, [frames.length]);
+
+  useEffect(() => {
+    if (activeFrameIndex < 0) return;
+    const el = tileRefs.current[activeFrameIndex];
+    if (!el || !rootRef.current?.contains(document.activeElement)) return;
+    el.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+  }, [activeFrameIndex]);
+
+  const handleStripKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (frames.length === 0 || activeFrameIndex < 0) return;
+      let nextIdx: number | null = null;
+      if (e.key === "ArrowRight") nextIdx = Math.min(activeFrameIndex + 1, frames.length - 1);
+      else if (e.key === "ArrowLeft") nextIdx = Math.max(activeFrameIndex - 1, 0);
+      else if (e.key === "Home") nextIdx = 0;
+      else if (e.key === "End") nextIdx = frames.length - 1;
+      if (nextIdx === null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const t = frames[nextIdx]?.time;
+      if (t === undefined) return;
+      if (nextIdx !== activeFrameIndex) onSeek(t);
+    },
+    [frames, activeFrameIndex, onSeek],
+  );
 
   // Auto-scroll to keep playback position visible
   useEffect(() => {
@@ -131,16 +162,25 @@ export function FrameStrip({
   const playheadTime = frames[activeFrameIndex]?.time ?? 0;
 
   return (
-    <div className="relative mb-2 rounded border border-white/10 bg-black/50">
+    <div
+      ref={rootRef}
+      className="relative mb-2 rounded border border-white/10 bg-black/50 outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      tabIndex={0}
+      role="toolbar"
+      aria-label="Film strip. Arrow keys step by frame interval and refresh the context strip when paused."
+      onKeyDown={handleStripKeyDown}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-1 border-b border-white/10 px-2 py-1.5">
         <span className="text-[11px] font-medium uppercase tracking-wide text-white/55">Film strip</span>
-        <span className="font-mono text-[10px] text-white/70">
+        <span className="text-right font-mono text-[10px] text-white/70">
           Playhead{" "}
           <span className="text-[color:var(--accent)]">{formatTimestamp(playheadTime)}</span>
           <span className="text-white/45"> · {interval}s frames · </span>
           <span className="text-white/45">
             {activeFrameIndex + 1} / {frames.length}
           </span>
+          <span className="text-white/35"> · </span>
+          <span className="text-white/55">←/→ Home/End</span>
         </span>
       </div>
       <div
@@ -168,6 +208,9 @@ export function FrameStrip({
             return (
               <button
                 key={frame.index}
+                ref={(el) => {
+                  tileRefs.current[frame.index] = el;
+                }}
                 type="button"
                 className={cn(
                   "relative flex-shrink-0 overflow-hidden border-y-2 border-r border-white/10 transition-[filter] last:border-r-0",
