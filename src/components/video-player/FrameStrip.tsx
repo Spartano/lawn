@@ -128,12 +128,25 @@ export function FrameStrip({
 
   if (frames.length === 0) return null;
 
+  const playheadTime = frames[activeFrameIndex]?.time ?? 0;
+
   return (
-    <div className="relative mb-2">
+    <div className="relative mb-2 rounded border border-white/10 bg-black/50">
+      <div className="flex flex-wrap items-baseline justify-between gap-1 border-b border-white/10 px-2 py-1.5">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-white/55">Film strip</span>
+        <span className="font-mono text-[10px] text-white/70">
+          Playhead{" "}
+          <span className="text-[color:var(--accent)]">{formatTimestamp(playheadTime)}</span>
+          <span className="text-white/45"> · {interval}s frames · </span>
+          <span className="text-white/45">
+            {activeFrameIndex + 1} / {frames.length}
+          </span>
+        </span>
+      </div>
       <div
         ref={scrollRef}
         className={cn(
-          "frame-strip-scroll flex gap-0 overflow-x-auto",
+          "frame-strip-scroll flex gap-0 overflow-x-auto px-0",
           isScrollable && "scroll-smooth",
         )}
         style={{
@@ -150,37 +163,49 @@ export function FrameStrip({
           className="flex flex-shrink-0"
           style={{ width: isScrollable ? totalStripWidth : "100%" }}
         >
-          {frames.map((frame) => (
-            <button
-              key={frame.index}
-              type="button"
-              className={cn(
-                "relative flex-shrink-0 overflow-hidden border-r border-white/5 transition-all",
-                activeFrameIndex === frame.index
-                  ? "ring-2 ring-inset ring-[color:var(--accent)] brightness-110"
-                  : "brightness-75 hover:brightness-100",
-              )}
-              style={{
-                width: isScrollable ? frameWidth : `${100 / frames.length}%`,
-                height: frameHeight,
-              }}
-              onClick={() => handleFrameClick(frame.time)}
-              onMouseMove={(e) => handleMouseMove(e, frame.index)}
-              onMouseLeave={handleMouseLeave}
-              aria-label={`Seek to ${formatTimestamp(frame.time)}`}
-            >
-              <img
-                src={buildFrameThumbnailUrl(muxPlaybackId, frame.time)}
-                alt=""
-                loading="lazy"
-                className="pointer-events-none h-full w-full object-cover"
-                draggable={false}
-              />
-              {activeFrameIndex === frame.index && (
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-[color:var(--accent)]" />
-              )}
-            </button>
-          ))}
+          {frames.map((frame) => {
+            const isPlayhead = activeFrameIndex === frame.index;
+            return (
+              <button
+                key={frame.index}
+                type="button"
+                className={cn(
+                  "relative flex-shrink-0 overflow-hidden border-y-2 border-r border-white/10 transition-[filter] last:border-r-0",
+                  isPlayhead
+                    ? "z-[1] border-y-[color:var(--accent)] brightness-100 [box-shadow:inset_0_0_0_2px_rgba(255,255,255,0.95)]"
+                    : "border-y-transparent brightness-[0.72] hover:brightness-100",
+                )}
+                style={{
+                  width: isScrollable ? frameWidth : `${100 / frames.length}%`,
+                  height: frameHeight,
+                }}
+                onClick={() => handleFrameClick(frame.time)}
+                onMouseMove={(e) => handleMouseMove(e, frame.index)}
+                onMouseLeave={handleMouseLeave}
+                aria-label={`Seek to ${formatTimestamp(frame.time)}${isPlayhead ? " (current playhead)" : ""}`}
+                aria-current={isPlayhead ? "time" : undefined}
+              >
+                {isPlayhead && (
+                  <span className="pointer-events-none absolute left-0 right-0 top-0 z-[2] bg-[color:var(--accent)] py-0.5 text-center font-mono text-[9px] font-semibold uppercase tracking-wide text-black">
+                    Playhead
+                  </span>
+                )}
+                <img
+                  src={buildFrameThumbnailUrl(muxPlaybackId, frame.time)}
+                  alt=""
+                  loading="lazy"
+                  className={cn(
+                    "pointer-events-none h-full w-full object-cover",
+                    isPlayhead && "brightness-105",
+                  )}
+                  draggable={false}
+                />
+                {isPlayhead && (
+                  <div className="absolute inset-x-0 bottom-0 h-1 bg-[color:var(--accent)]" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
