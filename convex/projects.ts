@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getUser, requireTeamAccess, requireProjectAccess } from "./auth";
+import { scheduleMuxAssetDeletion } from "./videos";
 import { assertTeamHasActiveSubscription } from "./billingHelpers";
 
 export const create = mutation({
@@ -159,6 +160,7 @@ export const remove = mutation({
       }
 
       await ctx.db.delete(video._id);
+      await scheduleMuxAssetDeletion(ctx, video.muxAssetId);
     }
 
     await ctx.db.delete(args.projectId);

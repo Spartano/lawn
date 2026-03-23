@@ -10,6 +10,7 @@ import {
   requireTeamAccess,
 } from "./auth";
 import { getTeamSubscriptionState } from "./billingHelpers";
+import { scheduleMuxAssetDeletion } from "./videos";
 
 function normalizedEmail(value: string) {
   return value.trim().toLowerCase();
@@ -461,6 +462,7 @@ export const deleteTeam = mutation({
         }
 
         await ctx.db.delete(video._id);
+        await scheduleMuxAssetDeletion(ctx, video.muxAssetId);
       }
 
       await ctx.db.delete(project._id);

@@ -202,6 +202,11 @@ export default function ImagePage({
               {video.status !== "ready" && (
                 <Badge
                   variant={video.status === "failed" ? "destructive" : "secondary"}
+                  title={
+                    video.status === "failed" && video.uploadError
+                      ? video.uploadError
+                      : undefined
+                  }
                 >
                   {video.status === "uploading" && "Uploading"}
                   {video.status === "failed" && "Failed"}
@@ -300,7 +305,14 @@ export default function ImagePage({
                   </div>
                 )}
                 {video.status === "failed" && (
-                  <p className="text-[#dc2626]">Processing failed</p>
+                  <div className="max-w-md px-4 text-center space-y-2">
+                    <p className="text-[#dc2626] font-medium">Processing failed</p>
+                    {video.uploadError ? (
+                      <p className="text-xs font-mono text-white/75 break-words whitespace-pre-wrap">
+                        {video.uploadError}
+                      </p>
+                    ) : null}
+                  </div>
                 )}
               </div>
             </div>

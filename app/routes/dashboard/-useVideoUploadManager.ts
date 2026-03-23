@@ -171,7 +171,10 @@ export function useVideoUploadManager() {
           );
 
           if (createdVideoId) {
-            markUploadFailed({ videoId: createdVideoId }).catch(console.error);
+            markUploadFailed({
+              videoId: createdVideoId,
+              uploadError: errorMessage,
+            }).catch(console.error);
           }
         }
       }
@@ -186,7 +189,10 @@ export function useVideoUploadManager() {
         upload.abortController.abort();
       }
       if (upload?.videoId) {
-        markUploadFailed({ videoId: upload.videoId }).catch(console.error);
+        markUploadFailed({
+          videoId: upload.videoId,
+          uploadError: "Upload cancelled.",
+        }).catch(console.error);
       }
       setUploads((prev) => prev.filter((item) => item.id !== uploadId));
     },

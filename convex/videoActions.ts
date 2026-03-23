@@ -154,6 +154,25 @@ function validateUploadRequestOrThrow(args: { fileSize: number; contentType: str
   return normalizedContentType;
 }
 
+function uploadErrorStringFromUnknown(error: unknown): string {
+  if (error instanceof Error) {
+    const msg = error.message?.trim();
+    if (msg) return msg;
+    return error.name || "Error";
+  }
+  if (typeof error === "string") return error;
+  if (error !== null && typeof error === "object") {
+    const msg = (error as { message?: unknown }).message;
+    if (typeof msg === "string" && msg.length > 0) return msg;
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
+
 function shouldDeleteUploadedObjectOnFailure(error: unknown): boolean {
   if (!(error instanceof Error)) {
     return false;
@@ -356,15 +375,12 @@ export const markUploadComplete = action({
         }
       }
 
-      const uploadError =
-        shouldDeleteObject && error instanceof Error
-          ? error.message
-          : "Processing failed after upload.";
+      const uploadError = uploadErrorStringFromUnknown(error);
       await ctx.runMutation(internal.videos.markAsFailed, {
         videoId: args.videoId,
         uploadError,
       });
-      throw error;
+      throw error instanceof Error ? error : new Error(String(error));
     }
 
     return { success: true };
@@ -374,6 +390,7 @@ export const markUploadComplete = action({
 export const markUploadFailed = action({
   args: {
     videoId: v.id("videos"),
+    uploadError: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -383,7 +400,9 @@ export const markUploadFailed = action({
 
     await ctx.runMutation(internal.videos.markAsFailed, {
       videoId: args.videoId,
-      uploadError: "Upload failed before Mux could process the asset.",
+      uploadError:
+        args.uploadError ??
+        "Upload failed before Mux could process the asset.",
     });
 
     return { success: true };

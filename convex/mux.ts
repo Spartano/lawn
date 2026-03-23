@@ -61,17 +61,38 @@ export function getMuxClient(): Mux {
   return cachedMux;
 }
 
+function muxErrorToUserMessage(err: unknown): string | null {
+  const text =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : JSON.stringify(err);
+  if (/free plan is limited to \d+ assets/i.test(text) || /limited to \d+ assets/i.test(text)) {
+    return "Mux free plan allows a limited number of video assets (e.g. 10). Remove unused assets in the Mux dashboard or upgrade your Mux plan, then try uploading again.";
+  }
+  return null;
+}
+
 export async function createMuxAssetFromInputUrl(videoId: string, inputUrl: string) {
   const mux = getMuxClient();
-  return await mux.video.assets.create({
-    inputs: [{ url: inputUrl }],
-    playback_policies: ["public"],
-    video_quality: "basic",
-    // Mux currently supports 1080p as the lowest adaptive streaming max tier.
-    max_resolution_tier: "1080p",
-    mp4_support: "none",
-    passthrough: videoId,
-  });
+  try {
+    return await mux.video.assets.create({
+      inputs: [{ url: inputUrl }],
+      playback_policies: ["public"],
+      video_quality: "basic",
+      // Mux currently supports 1080p as the lowest adaptive streaming max tier.
+      max_resolution_tier: "1080p",
+      mp4_support: "none",
+      passthrough: videoId,
+    });
+  } catch (err) {
+    const friendly = muxErrorToUserMessage(err);
+    if (friendly) {
+      throw new Error(friendly);
+    }
+    throw err;
+  }
 }
 
 export async function getMuxAsset(assetId: string) {

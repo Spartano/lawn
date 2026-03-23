@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query, MutationCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { identityName, requireProjectAccess, requireVideoAccess } from "./auth";
 import { Id } from "./_generated/dataModel";
 import { generateUniqueToken } from "./security";
@@ -47,6 +48,16 @@ async function deleteShareAccessGrantsForLink(
   for (const grant of grants) {
     await ctx.db.delete(grant._id);
   }
+}
+
+export async function scheduleMuxAssetDeletion(
+  ctx: MutationCtx,
+  muxAssetId: string | undefined,
+) {
+  if (!muxAssetId) return;
+  await ctx.scheduler.runAfter(0, internal.muxActions.deleteAssetForRemovedVideo, {
+    muxAssetId,
+  });
 }
 
 export const create = mutation({
@@ -259,6 +270,9 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     await requireVideoAccess(ctx, args.videoId, "admin");
 
+    const video = await ctx.db.get(args.videoId);
+    const muxAssetId = video?.muxAssetId;
+
     const comments = await ctx.db
       .query("comments")
       .withIndex("by_video", (q) => q.eq("videoId", args.videoId))
@@ -277,6 +291,7 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.videoId);
+    await scheduleMuxAssetDeletion(ctx, muxAssetId);
   },
 });
 
@@ -396,7 +411,7 @@ export const markAsFailed = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.videoId, {
       muxAssetStatus: "errored",
-      uploadError: args.uploadError,
+      uploadError: args.uploadError ?? "Upload failed.",
       status: "failed",
     });
   },

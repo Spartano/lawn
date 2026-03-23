@@ -391,12 +391,19 @@ export default function ProjectPage({
                       </div>
                     )}
                     {video.status !== "ready" && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold uppercase tracking-wider">
-                          {video.status === "uploading" && "Uploading..."}
-                          {video.status === "processing" && "Processing..."}
-                          {video.status === "failed" && "Failed"}
-                        </span>
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-2">
+                        <div className="text-center max-w-[95%]">
+                          <span className="text-white text-xs font-bold uppercase tracking-wider block">
+                            {video.status === "uploading" && "Uploading..."}
+                            {video.status === "processing" && "Processing..."}
+                            {video.status === "failed" && "Failed"}
+                          </span>
+                          {video.status === "failed" && video.uploadError ? (
+                            <span className="mt-1.5 block text-[10px] font-mono text-white/90 leading-snug line-clamp-3 break-words">
+                              {video.uploadError}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                     {/* Hover menu */}
@@ -531,12 +538,19 @@ export default function ProjectPage({
                       </div>
                     )}
                     {video.status !== "ready" && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold uppercase tracking-wider">
-                          {video.status === "uploading" && "Uploading..."}
-                          {video.status === "processing" && "Processing..."}
-                          {video.status === "failed" && "Failed"}
-                        </span>
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-1.5">
+                        <div className="text-center max-w-[95%]">
+                          <span className="text-white text-[10px] font-bold uppercase tracking-wider block">
+                            {video.status === "uploading" && "Uploading..."}
+                            {video.status === "processing" && "Processing..."}
+                            {video.status === "failed" && "Failed"}
+                          </span>
+                          {video.status === "failed" && video.uploadError ? (
+                            <span className="mt-1 block text-[9px] font-mono text-white/90 leading-snug line-clamp-2 break-words">
+                              {video.uploadError}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                     {video.status === "ready" && !isImage && video.duration && (

@@ -6,6 +6,7 @@ import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import {
   buildMuxThumbnailUrl,
+  deleteMuxAsset,
   getMuxAsset,
   verifyMuxWebhookSignature,
 } from "./mux";
@@ -325,5 +326,33 @@ export const processWebhook = internalAction({
     }
 
     return { status: 200, message: "OK" };
+  },
+});
+
+export const deleteAssetForRemovedVideo = internalAction({
+  args: { muxAssetId: v.string() },
+  returns: v.null(),
+  handler: async (_ctx, args) => {
+    try {
+      await deleteMuxAsset(args.muxAssetId);
+    } catch (err) {
+      const status =
+        typeof err === "object" && err !== null && "status" in err
+          ? (err as { status: number }).status
+          : undefined;
+      if (status === 404) {
+        return null;
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      if (/404|not\s*found/i.test(message)) {
+        return null;
+      }
+      console.error("Failed to delete Mux asset after video removal", {
+        muxAssetId: args.muxAssetId,
+        err,
+      });
+      throw err;
+    }
+    return null;
   },
 });
